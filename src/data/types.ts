@@ -54,4 +54,5 @@ export interface CartItem {
   price: number;
   quantity: number;
   specialInstructions?: string;
+  comments?: string;
 }

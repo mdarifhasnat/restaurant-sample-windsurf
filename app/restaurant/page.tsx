@@ -197,11 +197,113 @@ export default function RestaurantPage() {
       description: item.description,
       image: item.image,
       allergenInfo: item.allergens.length > 0 ? `Contains: ${item.allergens.join(', ')}` : undefined,
-      optionGroups: [] // TODO: Add actual option groups based on item type
+      optionGroups: [
+        // SIZE (Small/Medium/Large) - Required
+        {
+          id: 'size',
+          type: 'radio',
+          title: 'Size:',
+          helperText: 'Choose your preferred size',
+          required: true,
+          options: [
+            { id: 'small', label: 'Small', priceAdd: -1.00 },
+            { id: 'medium', label: 'Medium', priceAdd: 0 },
+            { id: 'large', label: 'Large', priceAdd: 1.50 }
+          ]
+        },
+        // OPTIONS (Standard/Vegan etc.) - Required
+        {
+          id: 'options',
+          type: 'radio',
+          title: 'Options:',
+          helperText: 'Choose your preferred option',
+          required: true,
+          options: [
+            { id: 'standard', label: 'Standard', priceAdd: 0 },
+            { id: 'vegetarian', label: 'Vegetarian', priceAdd: 0 },
+            { id: 'vegan', label: 'Vegan', priceAdd: 0 },
+            { id: 'with-egg', label: 'With egg', priceAdd: 0.50 }
+          ]
+        },
+        // SCHARF / Spice Level - Required
+        {
+          id: 'spice',
+          type: 'spice',
+          title: 'Scharf (Spice Level):',
+          helperText: 'How spicy do you want it?',
+          required: true,
+          options: [
+            { id: 'mild', label: 'Not spicy (mild)', priceAdd: 0, spiceLevel: 0 },
+            { id: 'leicht', label: 'Slightly spicy (leicht scharf)', priceAdd: 0, spiceLevel: 1 },
+            { id: 'mittel', label: 'Medium spicy (mittel scharf)', priceAdd: 0, spiceLevel: 2 },
+            { id: 'sehr', label: 'Very spicy (sehr scharf)', priceAdd: 0, spiceLevel: 3 }
+          ]
+        },
+        // MEAT TYPE (Chicken/Beef etc.) - Required
+        {
+          id: 'meat',
+          type: 'radio',
+          title: 'Meat Type:',
+          helperText: 'Choose your preferred meat',
+          required: true,
+          options: [
+            { id: 'chicken', label: 'Chicken', priceAdd: 0 },
+            { id: 'beef', label: 'Beef', priceAdd: 1.00 },
+            { id: 'mixed', label: 'Mixed meat', priceAdd: 0.50 }
+          ]
+        },
+        // WITHOUT (remove ingredients) - Optional
+        {
+          id: 'without',
+          type: 'without',
+          title: 'Without:',
+          helperText: 'Remove ingredients you don\'t want',
+          required: false,
+          options: [
+            { id: 'no-onions', label: 'Without onions', priceAdd: 0 },
+            { id: 'no-tomatoes', label: 'Without tomatoes', priceAdd: 0 },
+            { id: 'no-lettuce', label: 'Without lettuce/salad', priceAdd: 0 },
+            { id: 'no-sauce', label: 'Without sauce', priceAdd: 0 },
+            { id: 'no-cheese', label: 'Without cheese', priceAdd: 0 },
+            { id: 'no-jalapenos', label: 'Without jalapeños', priceAdd: 0 }
+          ]
+        },
+        // EXTRA (add ingredients) - Optional
+        {
+          id: 'extra',
+          type: 'checkbox',
+          title: 'Extra:',
+          helperText: 'Add something extra',
+          required: false,
+          options: [
+            { id: 'extra-cheese', label: 'Extra cheese', priceAdd: 1.00 },
+            { id: 'extra-sauce', label: 'Extra sauce', priceAdd: 0.50 },
+            { id: 'extra-salad', label: 'Extra salad', priceAdd: 0 },
+            { id: 'extra-onions', label: 'Extra onions', priceAdd: 0 },
+            { id: 'extra-jalapenos', label: 'Extra jalapeños', priceAdd: 0.50 },
+            { id: 'double-meat', label: 'Double meat', priceAdd: 2.50 },
+            { id: 'extra-bacon', label: 'Extra bacon', priceAdd: 1.50 }
+          ]
+        },
+        // SAUCE CHOICE - Optional
+        {
+          id: 'sauce',
+          type: 'radio',
+          title: 'Sauce Choice:',
+          helperText: 'Choose your preferred sauce',
+          required: false,
+          options: [
+            { id: 'garlic', label: 'Garlic Sauce', priceAdd: 0 },
+            { id: 'bbq', label: 'BBQ Sauce', priceAdd: 0 },
+            { id: 'spicy', label: 'Spicy Sauce', priceAdd: 0 },
+            { id: 'none', label: 'No Sauce', priceAdd: 0 }
+          ]
+        }
+      ]
     };
   };
 
-  const handleModalAddToCart = (itemDetail: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions) => {
+  const handleModalAddToCart = (itemDetail: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions, comments: string) => {
     for (let i = 0; i < quantity; i++) {
       addItem({
         menuItemId: itemDetail.id,
@@ -209,6 +311,7 @@ export default function RestaurantPage() {
         nameEn: itemDetail.name, // Using German name for both for now
         price: itemDetail.basePrice,
         specialInstructions: JSON.stringify(selectedOptions), // Store options as JSON for now
+        comments: comments,
       });
     }
     handleModalClose();
@@ -216,7 +319,7 @@ export default function RestaurantPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Navbar lang="de" onLanguageChange={() => {}} />
+      <Navbar lang="de" />
       
       <main className="flex-1">
         <RestaurantHeader

@@ -8,6 +8,7 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  comments?: string;
 }
 
 interface BasketSidebarProps {
@@ -70,6 +71,11 @@ export default function BasketSidebar({
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
                     <p className="text-sm text-gray-600">{item.price.toFixed(2)}€</p>
+                    {item.comments && (
+                      <p className="text-xs text-gray-500 mt-1 italic bg-gray-50 p-2 rounded">
+                        📝 {item.comments}
+                      </p>
+                    )}
                   </div>
                   
                   <div className="flex items-center border border-gray-200 rounded-lg">

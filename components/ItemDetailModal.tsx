@@ -9,6 +9,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [showAllergenInfo, setShowAllergenInfo] = useState(false);
+  const [comments, setComments] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -21,6 +22,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
       setQuantity(1);
       setSelectedOptions({});
       setShowAllergenInfo(false);
+      setComments('');
     }
   }, [isOpen]);
 
@@ -52,9 +54,9 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
     });
   }, [item, selectedOptions]);
 
-  const handleOptionSelect = (groupId: string, optionId: string, type: 'radio' | 'checkbox') => {
+  const handleOptionSelect = (groupId: string, optionId: string, type: 'radio' | 'checkbox' | 'without' | 'spice') => {
     setSelectedOptions(prev => {
-      if (type === 'radio') {
+      if (type === 'radio' || type === 'spice') {
         return {
           ...prev,
           [groupId]: [optionId]
@@ -86,7 +88,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
 
   const handleAddToCart = () => {
     if (isFormValid) {
-      onAddToCart(item, quantity, selectedOptions);
+      onAddToCart(item, quantity, selectedOptions, comments);
       onClose();
     }
   };
@@ -154,69 +156,135 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
           </div>
 
           {/* Customization Sections */}
-          {item.optionGroups.map(group => (
-            <div key={group.id} className="border-t border-gray-100">
-              {/* Section Header */}
-              <div className="px-6 py-4 bg-stone-50">
-                {group.helperText && (
-                  <p className="text-xs text-gray-500 mb-1">{group.helperText}</p>
-                )}
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{group.title}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    group.required
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    {group.required ? '1 Required' : 'Optional'}
-                  </span>
+          {item.optionGroups.map(group => {
+            const isSelected = (optionId: string) => (selectedOptions[group.id] || []).includes(optionId);
+            const isSpiceGroup = group.type === 'spice';
+            const isWithoutGroup = group.type === 'without';
+            const isExtraGroup = group.type === 'checkbox' && group.title.toLowerCase().includes('extra');
+
+            return (
+              <div key={group.id} className="border-t border-gray-100">
+                {/* Section Header */}
+                <div className="px-6 py-4 bg-stone-50">
+                  {group.helperText && (
+                    <p className="text-xs text-gray-500 mb-1">{group.helperText}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">{group.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      group.required
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}>
+                      {group.required ? '1 Required' : 'Optional'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Options */}
+                <div className="px-6 py-4 space-y-3">
+                  {group.options.map(option => {
+                    const selected = isSelected(option.id);
+                    
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => handleOptionSelect(group.id, option.id, group.type)}
+                        className={`w-full flex items-center justify-between p-4 border rounded-xl transition-all text-left ${
+                          selected
+                            ? isSpiceGroup
+                              ? 'border-red-300 bg-red-50'
+                              : isWithoutGroup
+                                ? 'border-red-200 bg-red-50'
+                                : isExtraGroup
+                                  ? 'border-green-300 bg-green-50'
+                                  : 'border-gray-900 bg-gray-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center flex-1">
+                          {/* Radio/Checkbox Indicator */}
+                          <div className={`w-5 h-5 mr-3 flex items-center justify-center ${
+                            group.type === 'radio' || group.type === 'spice' ? 'rounded-full' : 'rounded'
+                          } border-2 ${
+                            selected
+                              ? 'border-gray-900 bg-gray-900'
+                              : 'border-gray-300'
+                          }`}>
+                            {selected && (
+                              <div className={`w-2.5 h-2.5 bg-white ${
+                                group.type === 'radio' || group.type === 'spice' ? 'rounded-full' : 'rounded-sm'
+                              }`} />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            {/* Without section: strikethrough when selected */}
+                            {isWithoutGroup && selected ? (
+                              <span className="font-medium text-gray-500 line-through">{option.label}</span>
+                            ) : (
+                              <span className="font-medium text-gray-900">{option.label}</span>
+                            )}
+                            
+                            {/* Spice level: show chili icons */}
+                            {isSpiceGroup && option.spiceLevel && (
+                              <span className="ml-2">
+                                {'🌶️'.repeat(option.spiceLevel)}
+                              </span>
+                            )}
+                            
+                            {option.infoText && (
+                              <button className="ml-2 text-gray-400 hover:text-gray-600">
+                                <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Without section: show warning icon when selected */}
+                          {isWithoutGroup && selected && (
+                            <span className="ml-2 text-red-500">
+                              🚫
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Price display */}
+                        {option.priceAdd > 0 && (
+                          <span className="text-sm font-medium text-gray-700 ml-4">
+                            +{option.priceAdd.toFixed(2)} €
+                          </span>
+                        )}
+                        
+                        {/* Without section: show "free" */}
+                        {isWithoutGroup && option.priceAdd === 0 && selected && (
+                          <span className="text-sm text-gray-400 ml-4">
+                            free
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Options */}
-              <div className="px-6 py-4 space-y-3">
-                {group.options.map(option => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleOptionSelect(group.id, option.id, group.type)}
-                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
-                  >
-                    <div className="flex items-center flex-1">
-                      {/* Radio/Checkbox Indicator */}
-                      <div className={`w-5 h-5 mr-3 flex items-center justify-center ${
-                        group.type === 'radio' ? 'rounded-full' : 'rounded'
-                      } border-2 ${
-                        (selectedOptions[group.id] || []).includes(option.id)
-                          ? 'border-gray-900 bg-gray-900'
-                          : 'border-gray-300'
-                      }`}>
-                        {(selectedOptions[group.id] || []).includes(option.id) && (
-                          <div className={`w-2.5 h-2.5 bg-white ${
-                            group.type === 'radio' ? 'rounded-full' : 'rounded-sm'
-                          }`} />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900">{option.label}</span>
-                        {option.infoText && (
-                          <button className="ml-2 text-gray-400 hover:text-gray-600">
-                            <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {option.priceAdd > 0 && (
-                      <span className="text-sm font-medium text-gray-700 ml-4">
-                        +{option.priceAdd.toFixed(2)} €
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+        {/* Comments Section */}
+        <div className="border-t border-gray-100 px-6 py-4">
+          <label htmlFor="comments" className="block text-sm font-medium text-gray-700 mb-2">
+            Add comments (optional)
+          </label>
+          <textarea
+            id="comments"
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            placeholder="Special requests, allergies, etc."
+            rows={3}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+          />
         </div>
 
         {/* Bottom Sticky Bar */}

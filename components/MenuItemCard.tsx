@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { MenuItem } from '@/src/data/types';
 
 interface MenuItemCardProps {
@@ -8,6 +9,7 @@ interface MenuItemCardProps {
 }
 
 export default function MenuItemCard({ item, onItemClick }: MenuItemCardProps) {
+  const [showAllergens, setShowAllergens] = useState(false);
   const price = item.discountPrice || item.basePrice;
   const hasDiscount = item.discountPrice && item.discountPrice < item.basePrice;
 
@@ -31,6 +33,15 @@ export default function MenuItemCard({ item, onItemClick }: MenuItemCardProps) {
           <div className="flex items-start justify-between gap-2 mb-1">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
               {item.name}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllergens(!showAllergens);
+                }}
+                className="text-xs mx-2 px-2 py-1 bg-amber-50 text-amber-700 rounded-md border border-amber-200 hover:bg-amber-100 transition-colors"
+              >
+                ℹ
+              </button>
             </h3>
             {!item.available && (
               <span className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded-md flex-shrink-0">
@@ -43,15 +54,15 @@ export default function MenuItemCard({ item, onItemClick }: MenuItemCardProps) {
           </p>
           
           {item.allergens && item.allergens.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              <span
-                className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-md border border-amber-200 cursor-help relative group"
-              >
-                {item.allergens.length} Allergene
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg z-50 whitespace-nowrap">
-                  {item.allergens.join(', ')}
+            <div className="mb-3">
+              
+              {showAllergens && (
+                <div className="mt-2 p-2 bg-amber-50 rounded-md border border-amber-200">
+                  <p className="text-xs text-gray-700">
+                    {item.allergens.join(', ')}
+                  </p>
                 </div>
-              </span>
+              )}
             </div>
           )}
           
