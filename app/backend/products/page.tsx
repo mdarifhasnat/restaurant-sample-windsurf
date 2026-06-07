@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getProducts, createProduct, updateProduct, deleteProduct, toggleProductAvailability } from '../_actions/products';
 import { getCategories } from '../_actions/categories';
 import { Search, Plus, Edit, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react';
@@ -38,9 +38,9 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
-  useState(() => {
+  useEffect(() => {
     loadData();
-  });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../_actions/categories';
 import { Search, Plus, Edit, Trash2, X, GripVertical } from 'lucide-react';
 
@@ -27,9 +27,9 @@ export default function CategoriesPage() {
     setLoading(false);
   };
 
-  useState(() => {
+  useEffect(() => {
     loadData();
-  });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

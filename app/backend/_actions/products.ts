@@ -49,9 +49,15 @@ export async function getProducts({
 
     const total = await prisma.product.count({ where });
 
+    // Convert Decimal to Number for serialization
+    const serializedProducts = products.map(product => ({
+      ...product,
+      price: Number(product.price),
+    }));
+
     return {
       success: true,
-      products,
+      products: serializedProducts,
       total,
     };
   } catch (error) {
@@ -84,9 +90,15 @@ export async function getProductById(productId: string) {
       };
     }
 
+    // Convert Decimal to Number for serialization
+    const serializedProduct = {
+      ...product,
+      price: Number(product.price),
+    };
+
     return {
       success: true,
-      product,
+      product: serializedProduct,
     };
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -107,8 +119,10 @@ export async function createProduct(input: CreateProductInput) {
 
     const product = await prisma.product.create({
       data: {
+        name: validated.name,
         nameDe: validated.nameDe,
         nameEn: validated.nameEn,
+        description: validated.description,
         descriptionDe: validated.descriptionDe,
         descriptionEn: validated.descriptionEn,
         price: new Decimal(validated.price),
@@ -128,9 +142,15 @@ export async function createProduct(input: CreateProductInput) {
     revalidatePath('/backend/products');
     revalidatePath('/backend');
 
+    // Convert Decimal to Number for serialization
+    const serializedProduct = {
+      ...product,
+      price: Number(product.price),
+    };
+
     return {
       success: true,
-      product,
+      product: serializedProduct,
     };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -154,9 +174,9 @@ export async function updateProduct(input: UpdateProductInput) {
     const product = await prisma.product.update({
       where: { id },
       data: {
-        ...(updateData.nameDe && { nameDe: updateData.nameDe }),
+        ...(updateData.nameDe && { name: updateData.nameDe, nameDe: updateData.nameDe }),
         ...(updateData.nameEn && { nameEn: updateData.nameEn }),
-        ...(updateData.descriptionDe !== undefined && { descriptionDe: updateData.descriptionDe }),
+        ...(updateData.descriptionDe !== undefined && { description: updateData.descriptionDe, descriptionDe: updateData.descriptionDe }),
         ...(updateData.descriptionEn !== undefined && { descriptionEn: updateData.descriptionEn }),
         ...(updateData.price && { price: new Decimal(updateData.price) }),
         ...(updateData.categoryId && { categoryId: updateData.categoryId }),
@@ -175,9 +195,15 @@ export async function updateProduct(input: UpdateProductInput) {
     revalidatePath('/backend/products');
     revalidatePath('/backend');
 
+    // Convert Decimal to Number for serialization
+    const serializedProduct = {
+      ...product,
+      price: Number(product.price),
+    };
+
     return {
       success: true,
-      product,
+      product: serializedProduct,
     };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -239,9 +265,15 @@ export async function toggleProductAvailability(productId: string) {
     revalidatePath('/backend/products');
     revalidatePath('/backend');
 
+    // Convert Decimal to Number for serialization
+    const serializedProduct = {
+      ...updated,
+      price: Number(updated.price),
+    };
+
     return {
       success: true,
-      product: updated,
+      product: serializedProduct,
     };
   } catch (error) {
     console.error('Error toggling product availability:', error);

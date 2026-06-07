@@ -5,8 +5,10 @@ import { z } from 'zod';
 // ============================================================================
 
 export const CreateProductSchema = z.object({
+  name: z.string().min(1, 'Produktname ist erforderlich'),
   nameDe: z.string().min(1, 'Deutscher Name ist erforderlich'),
   nameEn: z.string().min(1, 'Englischer Name ist erforderlich'),
+  description: z.string().optional(),
   descriptionDe: z.string().optional(),
   descriptionEn: z.string().optional(),
   price: z.string().min(1, 'Preis ist erforderlich').regex(/^\d+(\.\d{1,2})?$/, 'Ungültiges Preisformat'),
@@ -31,8 +33,10 @@ export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
 // ============================================================================
 
 export const CreateCategorySchema = z.object({
+  name: z.string().min(1, 'Kategoriename ist erforderlich'),
   nameDe: z.string().min(1, 'Deutscher Name ist erforderlich'),
   nameEn: z.string().min(1, 'Englischer Name ist erforderlich'),
+  description: z.string().optional(),
   descriptionDe: z.string().optional(),
   descriptionEn: z.string().optional(),
   sortOrder: z.number().int().min(0).default(0),

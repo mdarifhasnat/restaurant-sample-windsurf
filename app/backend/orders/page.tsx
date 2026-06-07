@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getOrders, updateOrderStatus } from '../_actions/orders';
 import { Search, Filter, Eye, ChevronDown } from 'lucide-react';
 import { OrderStatus } from '@prisma/client';
@@ -25,9 +25,9 @@ export default function OrdersPage() {
     setLoading(false);
   };
 
-  useState(() => {
+  useEffect(() => {
     loadOrders();
-  });
+  }, []);
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     const result = await updateOrderStatus({ orderId, status: newStatus });

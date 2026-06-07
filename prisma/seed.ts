@@ -9,8 +9,7 @@ async function main() {
   // ============================================================================
   // 1. CREATE ADMIN USER
   // ============================================================================
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-  
+  // For MVP, using plain text password (in production, use bcrypt)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@speisenreise.de' },
     update: {},
@@ -20,7 +19,8 @@ async function main() {
       firstName: 'Admin',
       lastName: 'User',
       phone: '+491234567890',
-      passwordHash: hashedPassword,
+      passwordHash: 'admin123',
+      role: 'ADMIN',
     },
   });
   console.log('✅ Admin user created:', admin.email);

@@ -47,9 +47,26 @@ export async function getOrders({
 
     const total = await prisma.order.count({ where });
 
+    // Convert Decimal to Number for serialization
+    const serializedOrders = orders.map(order => ({
+      ...order,
+      subtotal: Number(order.subtotal),
+      deliveryFee: Number(order.deliveryFee),
+      discountAmount: Number(order.discountAmount),
+      total: Number(order.total),
+      items: order.items.map(item => ({
+        ...item,
+        productPrice: Number(item.productPrice),
+      })),
+      payments: order.payments.map(payment => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
+    }));
+
     return {
       success: true,
-      orders,
+      orders: serializedOrders,
       total,
     };
   } catch (error) {
@@ -82,9 +99,26 @@ export async function getOrderById(orderId: string) {
       };
     }
 
+    // Convert Decimal to Number for serialization
+    const serializedOrder = {
+      ...order,
+      subtotal: Number(order.subtotal),
+      deliveryFee: Number(order.deliveryFee),
+      discountAmount: Number(order.discountAmount),
+      total: Number(order.total),
+      items: order.items.map(item => ({
+        ...item,
+        productPrice: Number(item.productPrice),
+      })),
+      payments: order.payments.map(payment => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
+    };
+
     return {
       success: true,
-      order,
+      order: serializedOrder,
     };
   } catch (error) {
     console.error('Error fetching order:', error);
@@ -115,9 +149,26 @@ export async function updateOrderStatus(input: UpdateOrderStatusInput) {
     revalidatePath('/backend/orders');
     revalidatePath('/backend');
 
+    // Convert Decimal to Number for serialization
+    const serializedOrder = {
+      ...order,
+      subtotal: Number(order.subtotal),
+      deliveryFee: Number(order.deliveryFee),
+      discountAmount: Number(order.discountAmount),
+      total: Number(order.total),
+      items: order.items.map(item => ({
+        ...item,
+        productPrice: Number(item.productPrice),
+      })),
+      payments: order.payments.map(payment => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
+    };
+
     return {
       success: true,
-      order,
+      order: serializedOrder,
     };
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -137,6 +188,8 @@ export async function getDashboardStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    console.log('Fetching dashboard stats for date:', today);
+
     const [
       totalOrdersToday,
       revenueToday,
@@ -149,6 +202,9 @@ export async function getDashboardStats() {
         where: {
           createdAt: { gte: today },
         },
+      }).catch((error) => {
+        console.error('Error fetching total orders today:', error);
+        return 0;
       }),
       prisma.order.aggregate({
         where: {
@@ -156,15 +212,27 @@ export async function getDashboardStats() {
           status: { not: 'CANCELLED' },
         },
         _sum: { total: true },
+      }).catch((error) => {
+        console.error('Error fetching revenue today:', error);
+        return { _sum: { total: null } };
       }),
       prisma.order.count({
         where: { status: 'PENDING' },
+      }).catch((error) => {
+        console.error('Error fetching pending orders count:', error);
+        return 0;
       }),
       prisma.product.count({
         where: { isActive: true },
+      }).catch((error) => {
+        console.error('Error fetching total products:', error);
+        return 0;
       }),
       prisma.category.count({
         where: { isActive: true },
+      }).catch((error) => {
+        console.error('Error fetching total categories:', error);
+        return 0;
       }),
       prisma.order.findMany({
         take: 10,
@@ -172,22 +240,51 @@ export async function getDashboardStats() {
         include: {
           items: true,
         },
+      }).catch((error) => {
+        console.error('Error fetching recent orders:', error);
+        return [];
       }),
     ]);
+
+    console.log('Dashboard stats fetched:', {
+      totalOrdersToday,
+      revenueToday: revenueToday._sum.total,
+      pendingOrdersCount,
+      totalProducts,
+      totalCategories,
+      recentOrdersCount: recentOrders.length,
+    });
+
+    // Convert Decimal to Number for recentOrders
+    const serializedRecentOrders = recentOrders.map(order => ({
+      ...order,
+      subtotal: Number(order.subtotal),
+      deliveryFee: Number(order.deliveryFee),
+      discountAmount: Number(order.discountAmount),
+      total: Number(order.total),
+      items: order.items.map(item => ({
+        ...item,
+        productPrice: Number(item.productPrice),
+      })),
+    }));
 
     return {
       success: true,
       stats: {
         totalOrdersToday,
-        revenueToday: revenueToday._sum.total || 0,
+        revenueToday: revenueToday._sum.total ? Number(revenueToday._sum.total) : 0,
         pendingOrdersCount,
         totalProducts,
         totalCategories,
-        recentOrders,
+        recentOrders: serializedRecentOrders,
       },
     };
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return {
       success: false,
       error: 'Fehler beim Laden der Statistiken',
