@@ -87,7 +87,11 @@ export async function getOrderById(orderId: string) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
         payments: true,
       },
     });
@@ -137,9 +141,16 @@ export async function updateOrderStatus(input: UpdateOrderStatusInput) {
   try {
     const validated = UpdateOrderStatusSchema.parse(input);
 
+    const updateData: any = { status: validated.status };
+    
+    // Set deliveredAt when status is DELIVERED
+    if (validated.status === 'DELIVERED') {
+      updateData.deliveredAt = new Date();
+    }
+
     const order = await prisma.order.update({
       where: { id: validated.orderId },
-      data: { status: validated.status },
+      data: updateData,
       include: {
         items: true,
         payments: true,

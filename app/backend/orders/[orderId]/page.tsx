@@ -1,0 +1,366 @@
+import { getOrderById } from '../../_actions/orders';
+import { ArrowLeft, Clock, MapPin, Phone, Mail, Package, Check, X } from 'lucide-react';
+import Link from 'next/link';
+
+export default async function OrderDetailPage({
+  params,
+}: {
+  params: { orderId: string };
+}) {
+  const result = await getOrderById(params.orderId);
+
+  if (!result.success || !result.order) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{result.error || 'Bestellung nicht gefunden'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const order = result.order;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(date));
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      PENDING: 'bg-yellow-100 text-yellow-800',
+      CONFIRMED: 'bg-blue-100 text-blue-800',
+      PREPARING: 'bg-purple-100 text-purple-800',
+      READY: 'bg-green-100 text-green-800',
+      DELIVERED: 'bg-gray-100 text-gray-800',
+      CANCELLED: 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      PENDING: 'Ausstehend',
+      CONFIRMED: 'Bestätigt',
+      PREPARING: 'In Zubereitung',
+      READY: 'Bereit',
+      DELIVERED: 'Geliefert',
+      CANCELLED: 'Storniert',
+    };
+    return labels[status] || status;
+  };
+
+  const getOrderTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      DELIVERY: 'Lieferung',
+      PICKUP: 'Abholung',
+    };
+    return labels[type] || type;
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <Link
+          href="/backend/orders"
+          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Zurück zu Bestellungen
+        </Link>
+        <h1 className="text-3xl font-bold text-gray-900">Bestellung #{order.orderNumber}</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Order Status */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Bestellstatus</h2>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                {getStatusLabel(order.status)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-500">Bestellnummer:</span>
+                <p className="font-medium">{order.orderNumber}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Bestelltyp:</span>
+                <p className="font-medium">{getOrderTypeLabel(order.orderType)}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Erstellt am:</span>
+                <p className="font-medium">{formatDate(order.createdAt)}</p>
+              </div>
+              {order.confirmedAt && (
+                <div>
+                  <span className="text-gray-500">Bestätigt am:</span>
+                  <p className="font-medium">{formatDate(order.confirmedAt)}</p>
+                </div>
+              )}
+              {order.estimatedPreparationMinutes && (
+                <div>
+                  <span className="text-gray-500">Geschätzte Zubereitungszeit:</span>
+                  <p className="font-medium">{order.estimatedPreparationMinutes} Minuten</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Customer Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Kundeninformationen</h2>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                <span className="text-gray-600">{order.email}</span>
+              </div>
+              <div className="flex items-center">
+                <Phone className="w-5 h-5 text-gray-400 mr-3" />
+                <span className="text-gray-600">{order.phone}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery Address */}
+          {order.orderType === 'DELIVERY' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Lieferadresse</h2>
+              <div className="flex items-start">
+                <MapPin className="w-5 h-5 text-gray-400 mr-3 mt-1" />
+                <div>
+                  <p className="text-gray-900 font-medium">
+                    {order.deliveryStreet} {order.deliveryHouseNumber}
+                  </p>
+                  <p className="text-gray-600">
+                    {order.deliveryPostalCode} {order.deliveryCity}
+                  </p>
+                  {order.deliveryInstructions && (
+                    <p className="text-gray-500 text-sm mt-2">
+                      Hinweis: {order.deliveryInstructions}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Order Items */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Bestellte Artikel</h2>
+            <div className="space-y-4">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex items-start justify-between pb-4 border-b border-gray-100 last:border-0">
+                  <div className="flex-1">
+                    <div className="flex items-start">
+                      <Package className="w-5 h-5 text-gray-400 mr-3 mt-1" />
+                      <div>
+                        <p className="font-medium text-gray-900">{item.productName}</p>
+                        {item.productDescription && (
+                          <p className="text-sm text-gray-500 mt-1">{item.productDescription}</p>
+                        )}
+                        {item.specialInstructions && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Sonderwünsche: {item.specialInstructions}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <p className="font-medium text-gray-900">
+                      {formatCurrency(Number(item.productPrice))} × {item.quantity}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(Number(item.productPrice) * item.quantity)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Order Notes */}
+          {order.orderNotes && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Bestellnotizen</h2>
+              <p className="text-gray-600">{order.orderNotes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Order Summary */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Zusammenfassung</h2>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Zwischensumme</span>
+                <span className="font-medium">{formatCurrency(Number(order.subtotal))}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Liefergebühr</span>
+                <span className="font-medium">{formatCurrency(Number(order.deliveryFee))}</span>
+              </div>
+              {Number(order.discountAmount) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Rabatt</span>
+                  <span className="font-medium text-green-600">
+                    -{formatCurrency(Number(order.discountAmount))}
+                  </span>
+                </div>
+              )}
+              <div className="border-t border-gray-200 pt-3 flex justify-between">
+                <span className="font-semibold text-gray-900">Gesamt</span>
+                <span className="font-bold text-gray-900 text-lg">
+                  {formatCurrency(Number(order.total))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Accept Order Section - Only show if PENDING */}
+          {order.status === 'PENDING' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Bestellung annehmen</h2>
+              <AcceptOrderForm orderId={order.id} />
+            </div>
+          )}
+
+          {/* Status Update */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Status ändern</h2>
+            <StatusUpdateForm orderId={order.id} currentStatus={order.status} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Accept Order Form Component
+function AcceptOrderForm({ orderId }: { orderId: string }) {
+  return (
+    <form action="/api/backend/orders/accept" method="POST" className="space-y-4">
+      <input type="hidden" name="orderId" value={orderId} />
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Zubereitungszeit
+        </label>
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {[15, 30, 45, 60].map((minutes) => (
+            <button
+              key={minutes}
+              type="button"
+              onClick={() => {
+                const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
+                if (input) input.value = minutes.toString();
+              }}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              {minutes} min
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={() => {
+              const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
+              if (input) input.value = (parseInt(input.value) - 5).toString();
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            -
+          </button>
+          <input
+            type="number"
+            name="preparationMinutes"
+            defaultValue="30"
+            min="5"
+            step="5"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-center"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
+              if (input) input.value = (parseInt(input.value) + 5).toString();
+            }}
+            className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-medium"
+      >
+        Bestellung annehmen
+      </button>
+    </form>
+  );
+}
+
+// Status Update Form Component
+function StatusUpdateForm({ orderId, currentStatus }: { orderId: string; currentStatus: string }) {
+  const statuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED'];
+  
+  const statusLabels: Record<string, string> = {
+    PENDING: 'Ausstehend',
+    CONFIRMED: 'Bestätigt',
+    PREPARING: 'In Zubereitung',
+    READY: 'Bereit',
+    DELIVERED: 'Geliefert',
+    CANCELLED: 'Storniert',
+  };
+
+  return (
+    <form action="/api/backend/orders/status" method="POST" className="space-y-4">
+      <input type="hidden" name="orderId" value={orderId} />
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Neuer Status
+        </label>
+        <select
+          name="status"
+          defaultValue={currentStatus}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+        >
+          {statuses.map((status) => (
+            <option key={status} value={status}>
+              {statusLabels[status]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium"
+      >
+        Status aktualisieren
+      </button>
+    </form>
+  );
+}

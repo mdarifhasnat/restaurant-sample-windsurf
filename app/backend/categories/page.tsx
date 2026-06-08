@@ -11,8 +11,10 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [formData, setFormData] = useState({
+    name: '',
     nameDe: '',
     nameEn: '',
+    description: '',
     descriptionDe: '',
     descriptionEn: '',
     sortOrder: 0,
@@ -58,8 +60,10 @@ export default function CategoriesPage() {
   const handleEdit = (category: any) => {
     setEditingCategory(category);
     setFormData({
+      name: category.name || '',
       nameDe: category.nameDe,
       nameEn: category.nameEn,
+      description: category.description || '',
       descriptionDe: category.descriptionDe || '',
       descriptionEn: category.descriptionEn || '',
       sortOrder: category.sortOrder,
@@ -71,8 +75,10 @@ export default function CategoriesPage() {
 
   const resetForm = () => {
     setFormData({
+      name: '',
       nameDe: '',
       nameEn: '',
+      description: '',
       descriptionDe: '',
       descriptionEn: '',
       sortOrder: 0,
@@ -192,6 +198,19 @@ export default function CategoriesPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kategoriename *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -217,6 +236,18 @@ export default function CategoriesPage() {
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Beschreibung
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

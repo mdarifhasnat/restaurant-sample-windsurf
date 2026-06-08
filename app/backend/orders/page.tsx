@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getOrders, updateOrderStatus } from '../_actions/orders';
 import { Search, Filter, Eye, ChevronDown } from 'lucide-react';
 import { OrderStatus } from '@prisma/client';
+import Link from 'next/link';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -181,15 +182,12 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowDetails(true);
-                          }}
+                        <Link
+                          href={`/backend/orders/${order.id}`}
                           className="text-gray-600 hover:text-gray-900"
                         >
                           <Eye className="w-5 h-5" />
-                        </button>
+                        </Link>
                         <div className="relative">
                           <select
                             value={order.status}
