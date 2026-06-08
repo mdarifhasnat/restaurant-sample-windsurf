@@ -48,8 +48,10 @@ model Category {
   id            String    @id @default(cuid())
   name          String
   nameDe        String
+  nameEn        String?
   description   String?
   descriptionDe String?
+  descriptionEn String?
   sortOrder     Int       @default(0)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
@@ -65,8 +67,10 @@ model Product {
   categoryId      String
   name            String
   nameDe          String
+  nameEn          String?
   description     String?
   descriptionDe   String?
+  descriptionEn   String?
   price           Decimal        @db.Decimal(10, 2)
   sortOrder       Int            @default(0)
   isActive        Boolean        @default(true)

@@ -18,8 +18,6 @@ export async function createSession(userId: string, email: string, role: string 
   const cookieStore = await cookies();
   const session: AdminSession = { userId, email, role };
   
-  console.log('Creating session:', session);
-  
   cookieStore.set(SESSION_COOKIE_NAME, JSON.stringify(session), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -27,8 +25,6 @@ export async function createSession(userId: string, email: string, role: string 
     maxAge: SESSION_DURATION / 1000,
     path: '/',
   });
-  
-  console.log('Session cookie set');
 }
 
 // ============================================================================

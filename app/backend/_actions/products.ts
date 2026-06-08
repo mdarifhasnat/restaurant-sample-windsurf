@@ -1,9 +1,14 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { CreateProductSchema, UpdateProductSchema, CreateProductInput, UpdateProductInput } from '@/lib/validations/admin';
-import { Decimal } from '@prisma/client/runtime/library';
-import { revalidatePath } from 'next/cache';
+import { prisma } from "@/lib/prisma";
+import {
+  CreateProductInput,
+  CreateProductSchema,
+  UpdateProductInput,
+  UpdateProductSchema,
+} from "@/lib/validations/admin";
+import { Decimal } from "@prisma/client/runtime/library";
+import { revalidatePath } from "next/cache";
 
 // ============================================================================
 // GET PRODUCTS
@@ -31,8 +36,8 @@ export async function getProducts({
 
     if (search) {
       where.OR = [
-        { nameDe: { contains: search, mode: 'insensitive' } },
-        { nameEn: { contains: search, mode: 'insensitive' } },
+        { nameDe: { contains: search, mode: "insensitive" } },
+        { nameEn: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -42,7 +47,7 @@ export async function getProducts({
         category: true,
         images: true,
       },
-      orderBy: { nameDe: 'asc' },
+      orderBy: { nameDe: "asc" },
       take: limit,
       skip: offset,
     });
@@ -50,7 +55,7 @@ export async function getProducts({
     const total = await prisma.product.count({ where });
 
     // Convert Decimal to Number for serialization
-    const serializedProducts = products.map(product => ({
+    const serializedProducts = products.map((product) => ({
       ...product,
       price: Number(product.price),
     }));
@@ -61,10 +66,10 @@ export async function getProducts({
       total,
     };
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error fetching products:", error);
     return {
       success: false,
-      error: 'Fehler beim Laden der Produkte',
+      error: "Fehler beim Laden der Produkte",
     };
   }
 }
@@ -86,7 +91,7 @@ export async function getProductById(productId: string) {
     if (!product) {
       return {
         success: false,
-        error: 'Produkt nicht gefunden',
+        error: "Produkt nicht gefunden",
       };
     }
 
@@ -101,10 +106,10 @@ export async function getProductById(productId: string) {
       product: serializedProduct,
     };
   } catch (error) {
-    console.error('Error fetching product:', error);
+    console.error("Error fetching product:", error);
     return {
       success: false,
-      error: 'Fehler beim Laden des Produkts',
+      error: "Fehler beim Laden des Produkts",
     };
   }
 }
@@ -121,13 +126,12 @@ export async function createProduct(input: CreateProductInput) {
       data: {
         name: validated.name,
         nameDe: validated.nameDe,
-        nameEn: validated.nameEn,
+        nameEn: validated.nameEn || validated.nameDe,
         description: validated.description,
         descriptionDe: validated.descriptionDe,
-        descriptionEn: validated.descriptionEn,
+        descriptionEn: validated.descriptionEn || validated.descriptionDe,
         price: new Decimal(validated.price),
         categoryId: validated.categoryId,
-        imageUrl: validated.imageUrl,
         isActive: validated.isActive,
         isAvailable: validated.isAvailable,
         allergens: validated.allergens,
@@ -139,8 +143,8 @@ export async function createProduct(input: CreateProductInput) {
       },
     });
 
-    revalidatePath('/backend/products');
-    revalidatePath('/backend');
+    revalidatePath("/backend/products");
+    revalidatePath("/backend");
 
     // Convert Decimal to Number for serialization
     const serializedProduct = {
@@ -153,10 +157,10 @@ export async function createProduct(input: CreateProductInput) {
       product: serializedProduct,
     };
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error("Error creating product:", error);
     return {
       success: false,
-      error: 'Fehler beim Erstellen des Produkts',
+      error: "Fehler beim Erstellen des Produkts",
     };
   }
 }
@@ -174,26 +178,41 @@ export async function updateProduct(input: UpdateProductInput) {
     const product = await prisma.product.update({
       where: { id },
       data: {
-        ...(updateData.nameDe && { name: updateData.nameDe, nameDe: updateData.nameDe }),
-        ...(updateData.nameEn && { nameEn: updateData.nameEn }),
-        ...(updateData.descriptionDe !== undefined && { description: updateData.descriptionDe, descriptionDe: updateData.descriptionDe }),
-        ...(updateData.descriptionEn !== undefined && { descriptionEn: updateData.descriptionEn }),
+        ...(updateData.name !== undefined && { name: updateData.name }),
+        ...(updateData.nameDe !== undefined && { nameDe: updateData.nameDe }),
+        ...(updateData.nameEn !== undefined && { 
+          nameEn: updateData.nameEn || updateData.nameDe 
+        }),
+        ...(updateData.description !== undefined && { description: updateData.description }),
+        ...(updateData.descriptionDe !== undefined && { descriptionDe: updateData.descriptionDe }),
+        ...(updateData.descriptionEn !== undefined && { 
+          descriptionEn: updateData.descriptionEn || updateData.descriptionDe 
+        }),
         ...(updateData.price && { price: new Decimal(updateData.price) }),
         ...(updateData.categoryId && { categoryId: updateData.categoryId }),
-        ...(updateData.imageUrl !== undefined && { imageUrl: updateData.imageUrl }),
-        ...(updateData.isActive !== undefined && { isActive: updateData.isActive }),
-        ...(updateData.isAvailable !== undefined && { isAvailable: updateData.isAvailable }),
-        ...(updateData.allergens !== undefined && { allergens: updateData.allergens }),
-        ...(updateData.calories !== undefined && { calories: updateData.calories }),
-        ...(updateData.preparationTime !== undefined && { preparationTime: updateData.preparationTime }),
+        ...(updateData.isActive !== undefined && {
+          isActive: updateData.isActive,
+        }),
+        ...(updateData.isAvailable !== undefined && {
+          isAvailable: updateData.isAvailable,
+        }),
+        ...(updateData.allergens !== undefined && {
+          allergens: updateData.allergens,
+        }),
+        ...(updateData.calories !== undefined && {
+          calories: updateData.calories,
+        }),
+        ...(updateData.preparationTime !== undefined && {
+          preparationTime: updateData.preparationTime,
+        }),
       },
       include: {
         category: true,
       },
     });
 
-    revalidatePath('/backend/products');
-    revalidatePath('/backend');
+    revalidatePath("/backend/products");
+    revalidatePath("/backend");
 
     // Convert Decimal to Number for serialization
     const serializedProduct = {
@@ -206,10 +225,10 @@ export async function updateProduct(input: UpdateProductInput) {
       product: serializedProduct,
     };
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error("Error updating product:", error);
     return {
       success: false,
-      error: 'Fehler beim Aktualisieren des Produkts',
+      error: "Fehler beim Aktualisieren des Produkts",
     };
   }
 }
@@ -225,17 +244,17 @@ export async function deleteProduct(productId: string) {
       data: { isActive: false },
     });
 
-    revalidatePath('/backend/products');
-    revalidatePath('/backend');
+    revalidatePath("/backend/products");
+    revalidatePath("/backend");
 
     return {
       success: true,
     };
   } catch (error) {
-    console.error('Error deleting product:', error);
+    console.error("Error deleting product:", error);
     return {
       success: false,
-      error: 'Fehler beim Löschen des Produkts',
+      error: "Fehler beim Löschen des Produkts",
     };
   }
 }
@@ -253,7 +272,7 @@ export async function toggleProductAvailability(productId: string) {
     if (!product) {
       return {
         success: false,
-        error: 'Produkt nicht gefunden',
+        error: "Produkt nicht gefunden",
       };
     }
 
@@ -262,8 +281,8 @@ export async function toggleProductAvailability(productId: string) {
       data: { isAvailable: !product.isAvailable },
     });
 
-    revalidatePath('/backend/products');
-    revalidatePath('/backend');
+    revalidatePath("/backend/products");
+    revalidatePath("/backend");
 
     // Convert Decimal to Number for serialization
     const serializedProduct = {
@@ -276,10 +295,10 @@ export async function toggleProductAvailability(productId: string) {
       product: serializedProduct,
     };
   } catch (error) {
-    console.error('Error toggling product availability:', error);
+    console.error("Error toggling product availability:", error);
     return {
       success: false,
-      error: 'Fehler beim Ändern der Verfügbarkeit',
+      error: "Fehler beim Ändern der Verfügbarkeit",
     };
   }
 }

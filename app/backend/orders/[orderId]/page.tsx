@@ -1,6 +1,8 @@
 import { getOrderById } from '../../_actions/orders';
 import { ArrowLeft, Clock, MapPin, Phone, Mail, Package, Check, X } from 'lucide-react';
 import Link from 'next/link';
+import AcceptOrderForm from './AcceptOrderForm';
+import StatusUpdateForm from './StatusUpdateForm';
 
 export default async function OrderDetailPage({
   params,
@@ -251,116 +253,5 @@ export default async function OrderDetailPage({
         </div>
       </div>
     </div>
-  );
-}
-
-// Accept Order Form Component
-function AcceptOrderForm({ orderId }: { orderId: string }) {
-  return (
-    <form action="/api/backend/orders/accept" method="POST" className="space-y-4">
-      <input type="hidden" name="orderId" value={orderId} />
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Zubereitungszeit
-        </label>
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          {[15, 30, 45, 60].map((minutes) => (
-            <button
-              key={minutes}
-              type="button"
-              onClick={() => {
-                const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
-                if (input) input.value = minutes.toString();
-              }}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              {minutes} min
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            type="button"
-            onClick={() => {
-              const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
-              if (input) input.value = (parseInt(input.value) - 5).toString();
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            -
-          </button>
-          <input
-            type="number"
-            name="preparationMinutes"
-            defaultValue="30"
-            min="5"
-            step="5"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-center"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              const input = document.querySelector('input[name="preparationMinutes"]') as HTMLInputElement;
-              if (input) input.value = (parseInt(input.value) + 5).toString();
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-medium"
-      >
-        Bestellung annehmen
-      </button>
-    </form>
-  );
-}
-
-// Status Update Form Component
-function StatusUpdateForm({ orderId, currentStatus }: { orderId: string; currentStatus: string }) {
-  const statuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED'];
-  
-  const statusLabels: Record<string, string> = {
-    PENDING: 'Ausstehend',
-    CONFIRMED: 'Bestätigt',
-    PREPARING: 'In Zubereitung',
-    READY: 'Bereit',
-    DELIVERED: 'Geliefert',
-    CANCELLED: 'Storniert',
-  };
-
-  return (
-    <form action="/api/backend/orders/status" method="POST" className="space-y-4">
-      <input type="hidden" name="orderId" value={orderId} />
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Neuer Status
-        </label>
-        <select
-          name="status"
-          defaultValue={currentStatus}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
-        >
-          {statuses.map((status) => (
-            <option key={status} value={status}>
-              {statusLabels[status]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <button
-        type="submit"
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium"
-      >
-        Status aktualisieren
-      </button>
-    </form>
   );
 }

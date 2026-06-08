@@ -142,7 +142,9 @@ export default function CategoriesPage() {
                   )}
                   <div>
                     <h3 className="font-semibold text-gray-900">{category.nameDe}</h3>
-                    <p className="text-sm text-gray-600">{category.nameEn}</p>
+                    {category.nameEn && category.nameEn !== category.nameDe && (
+                      <p className="text-sm text-gray-600">{category.nameEn}</p>
+                    )}
                   </div>
                 </div>
                 <GripVertical className="w-5 h-5 text-gray-400" />

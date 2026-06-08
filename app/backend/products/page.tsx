@@ -35,8 +35,8 @@ export default function ProductsPage() {
       getProducts({ search: search || undefined }),
       getCategories(),
     ]);
-    if (productsResult.success) setProducts(productsResult.products);
-    if (categoriesResult.success) setCategories(categoriesResult.categories);
+    if (productsResult.success && productsResult.products) setProducts(productsResult.products);
+    if (categoriesResult.success && categoriesResult.categories) setCategories(categoriesResult.categories);
     setLoading(false);
   };
 
@@ -193,7 +193,9 @@ export default function ProductsPage() {
                         )}
                         <div>
                           <p className="font-medium text-gray-900">{product.nameDe}</p>
-                          <p className="text-sm text-gray-600">{product.nameEn}</p>
+                          {product.nameEn && product.nameEn !== product.nameDe && (
+                            <p className="text-sm text-gray-600">{product.nameEn}</p>
+                          )}
                         </div>
                       </div>
                     </td>

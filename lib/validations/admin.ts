@@ -7,13 +7,12 @@ import { z } from 'zod';
 export const CreateProductSchema = z.object({
   name: z.string().min(1, 'Produktname ist erforderlich'),
   nameDe: z.string().min(1, 'Deutscher Name ist erforderlich'),
-  nameEn: z.string().min(1, 'Englischer Name ist erforderlich'),
+  nameEn: z.string().optional(),
   description: z.string().optional(),
   descriptionDe: z.string().optional(),
   descriptionEn: z.string().optional(),
   price: z.string().min(1, 'Preis ist erforderlich').regex(/^\d+(\.\d{1,2})?$/, 'Ungültiges Preisformat'),
   categoryId: z.string().min(1, 'Kategorie ist erforderlich'),
-  imageUrl: z.string().url('Ungültige Bild-URL').optional(),
   isActive: z.boolean().default(true),
   isAvailable: z.boolean().default(true),
   allergens: z.array(z.string()).optional(),
@@ -35,12 +34,11 @@ export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
 export const CreateCategorySchema = z.object({
   name: z.string().min(1, 'Kategoriename ist erforderlich'),
   nameDe: z.string().min(1, 'Deutscher Name ist erforderlich'),
-  nameEn: z.string().min(1, 'Englischer Name ist erforderlich'),
+  nameEn: z.string().optional(),
   description: z.string().optional(),
   descriptionDe: z.string().optional(),
   descriptionEn: z.string().optional(),
   sortOrder: z.number().int().min(0).default(0),
-  imageUrl: z.string().url('Ungültige Bild-URL').optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -57,7 +55,7 @@ export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 
 export const UpdateOrderStatusSchema = z.object({
   orderId: z.string().min(1, 'Bestell-ID ist erforderlich'),
-  status: z.enum(['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED']),
+  status: z.enum(['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED', 'CANCELLED']),
 });
 
 export type UpdateOrderStatusInput = z.infer<typeof UpdateOrderStatusSchema>;

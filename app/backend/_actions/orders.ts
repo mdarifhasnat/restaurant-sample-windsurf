@@ -113,6 +113,10 @@ export async function getOrderById(orderId: string) {
       items: order.items.map(item => ({
         ...item,
         productPrice: Number(item.productPrice),
+        product: item.product ? {
+          ...item.product,
+          price: Number(item.product.price),
+        } : null,
       })),
       payments: order.payments.map(payment => ({
         ...payment,

@@ -1,8 +1,13 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { CreateCategorySchema, UpdateCategorySchema, CreateCategoryInput, UpdateCategoryInput } from '@/lib/validations/admin';
-import { revalidatePath } from 'next/cache';
+import { prisma } from "@/lib/prisma";
+import {
+  CreateCategorySchema,
+  UpdateCategorySchema,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "@/lib/validations/admin";
+import { revalidatePath } from "next/cache";
 
 // ============================================================================
 // GET CATEGORIES
@@ -24,8 +29,8 @@ export async function getCategories({
 
     if (search) {
       where.OR = [
-        { nameDe: { contains: search, mode: 'insensitive' } },
-        { nameEn: { contains: search, mode: 'insensitive' } },
+        { nameDe: { contains: search, mode: "insensitive" } },
+        { nameEn: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -36,7 +41,7 @@ export async function getCategories({
           select: { products: true },
         },
       },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { sortOrder: "asc" },
       take: limit,
       skip: offset,
     });
@@ -49,10 +54,10 @@ export async function getCategories({
       total,
     };
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error("Error fetching categories:", error);
     return {
       success: false,
-      error: 'Fehler beim Laden der Kategorien',
+      error: "Fehler beim Laden der Kategorien",
     };
   }
 }
@@ -76,7 +81,7 @@ export async function getCategoryById(categoryId: string) {
     if (!category) {
       return {
         success: false,
-        error: 'Kategorie nicht gefunden',
+        error: "Kategorie nicht gefunden",
       };
     }
 
@@ -85,10 +90,10 @@ export async function getCategoryById(categoryId: string) {
       category,
     };
   } catch (error) {
-    console.error('Error fetching category:', error);
+    console.error("Error fetching category:", error);
     return {
       success: false,
-      error: 'Fehler beim Laden der Kategorie',
+      error: "Fehler beim Laden der Kategorie",
     };
   }
 }
@@ -103,28 +108,29 @@ export async function createCategory(input: CreateCategoryInput) {
 
     const category = await prisma.category.create({
       data: {
+        name: validated.name,
         nameDe: validated.nameDe,
-        nameEn: validated.nameEn,
+        nameEn: validated.nameEn || validated.nameDe,
+        description: validated.description,
         descriptionDe: validated.descriptionDe,
-        descriptionEn: validated.descriptionEn,
+        descriptionEn: validated.descriptionEn || validated.descriptionDe,
         sortOrder: validated.sortOrder,
-        imageUrl: validated.imageUrl,
         isActive: validated.isActive,
       },
     });
 
-    revalidatePath('/backend/categories');
-    revalidatePath('/backend');
+    revalidatePath("/backend/categories");
+    revalidatePath("/backend");
 
     return {
       success: true,
       category,
     };
   } catch (error) {
-    console.error('Error creating category:', error);
+    console.error("Error creating category:", error);
     return {
       success: false,
-      error: 'Fehler beim Erstellen der Kategorie',
+      error: "Fehler beim Erstellen der Kategorie",
     };
   }
 }
@@ -142,28 +148,37 @@ export async function updateCategory(input: UpdateCategoryInput) {
     const category = await prisma.category.update({
       where: { id },
       data: {
-        ...(updateData.nameDe && { nameDe: updateData.nameDe }),
-        ...(updateData.nameEn && { nameEn: updateData.nameEn }),
+        ...(updateData.name !== undefined && { name: updateData.name }),
+        ...(updateData.nameDe !== undefined && { nameDe: updateData.nameDe }),
+        ...(updateData.nameEn !== undefined && { 
+          nameEn: updateData.nameEn || updateData.nameDe 
+        }),
+        ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.descriptionDe !== undefined && { descriptionDe: updateData.descriptionDe }),
-        ...(updateData.descriptionEn !== undefined && { descriptionEn: updateData.descriptionEn }),
-        ...(updateData.sortOrder !== undefined && { sortOrder: updateData.sortOrder }),
-        ...(updateData.imageUrl !== undefined && { imageUrl: updateData.imageUrl }),
-        ...(updateData.isActive !== undefined && { isActive: updateData.isActive }),
+        ...(updateData.descriptionEn !== undefined && { 
+          descriptionEn: updateData.descriptionEn || updateData.descriptionDe 
+        }),
+        ...(updateData.sortOrder !== undefined && {
+          sortOrder: updateData.sortOrder,
+        }),
+        ...(updateData.isActive !== undefined && {
+          isActive: updateData.isActive,
+        }),
       },
     });
 
-    revalidatePath('/backend/categories');
-    revalidatePath('/backend');
+    revalidatePath("/backend/categories");
+    revalidatePath("/backend");
 
     return {
       success: true,
       category,
     };
   } catch (error) {
-    console.error('Error updating category:', error);
+    console.error("Error updating category:", error);
     return {
       success: false,
-      error: 'Fehler beim Aktualisieren der Kategorie',
+      error: "Fehler beim Aktualisieren der Kategorie",
     };
   }
 }
@@ -185,7 +200,7 @@ export async function deleteCategory(categoryId: string) {
     if (productCount > 0) {
       return {
         success: false,
-        error: 'Kategorie enthält noch Produkte und kann nicht gelöscht werden',
+        error: "Kategorie enthält noch Produkte und kann nicht gelöscht werden",
       };
     }
 
@@ -194,17 +209,17 @@ export async function deleteCategory(categoryId: string) {
       data: { isActive: false },
     });
 
-    revalidatePath('/backend/categories');
-    revalidatePath('/backend');
+    revalidatePath("/backend/categories");
+    revalidatePath("/backend");
 
     return {
       success: true,
     };
   } catch (error) {
-    console.error('Error deleting category:', error);
+    console.error("Error deleting category:", error);
     return {
       success: false,
-      error: 'Fehler beim Löschen der Kategorie',
+      error: "Fehler beim Löschen der Kategorie",
     };
   }
 }

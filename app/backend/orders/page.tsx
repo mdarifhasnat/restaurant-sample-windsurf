@@ -20,7 +20,7 @@ export default function OrdersPage() {
       search: search || undefined,
       status: statusFilter === 'ALL' ? undefined : statusFilter,
     });
-    if (result.success) {
+    if (result.success && result.orders) {
       setOrders(result.orders);
     }
     setLoading(false);
