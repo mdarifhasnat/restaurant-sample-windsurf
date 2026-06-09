@@ -158,9 +158,13 @@ export async function createProduct(input: CreateProductInput) {
     };
   } catch (error) {
     console.error("Error creating product:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return {
       success: false,
-      error: "Fehler beim Erstellen des Produkts",
+      error: error instanceof Error ? error.message : "Fehler beim Erstellen des Produkts",
     };
   }
 }
@@ -226,9 +230,13 @@ export async function updateProduct(input: UpdateProductInput) {
     };
   } catch (error) {
     console.error("Error updating product:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return {
       success: false,
-      error: "Fehler beim Aktualisieren des Produkts",
+      error: error instanceof Error ? error.message : "Fehler beim Aktualisieren des Produkts",
     };
   }
 }

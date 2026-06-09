@@ -75,7 +75,7 @@ model Product {
   sortOrder       Int            @default(0)
   isActive        Boolean        @default(true)
   isAvailable     Boolean        @default(true)
-  preparationTime Int?
+  preparationTime Int?           @default(15)
   calories        Int?
   allergens       String[]
   createdAt       DateTime       @default(now())

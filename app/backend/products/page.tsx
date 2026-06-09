@@ -54,6 +54,8 @@ export default function ProductsPage() {
       setEditingProduct(null);
       resetForm();
       loadData();
+    } else {
+      alert(result.error || 'Fehler beim Speichern des Produkts');
     }
   };
 

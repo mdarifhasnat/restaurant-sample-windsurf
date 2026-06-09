@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+
+export const dynamic = 'force-dynamic';
 import Navbar from '@/components/Navbar';
 import RestaurantHeader from '@/components/RestaurantHeader';
 import RestaurantInfo from '@/components/RestaurantInfo';
@@ -11,8 +13,7 @@ import BasketSidebar from '@/components/BasketSidebar';
 import ItemDetailModal from '@/components/ItemDetailModal';
 import Footer from '@/components/Footer';
 import { getRestaurantImage } from '@/lib/images';
-import { categories } from '@/src/data/categories';
-import { getMenuItemsByCategory } from '@/src/data/menu-items';
+import { getActiveCategories, getAvailableProductsByCategory, getAllAvailableProducts } from '@/app/_actions/menu';
 import { MenuItem } from '@/src/data/types';
 import { MenuItemDetail, SelectedOptions } from '@/types/menu-modal';
 import { useCart } from '@/hooks/useCart';
@@ -33,12 +34,15 @@ function isRestaurantOpen(): boolean {
 
 export default function RestaurantPage() {
   const { items: cart, addItem, removeItem, increaseQuantity, decreaseQuantity } = useCart();
-  const [activeCategory, setActiveCategory] = useState('pizza');
+  const [activeCategory, setActiveCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredItems, setFilteredItems] = useState<Record<string, MenuItem[]>>({});
+  const [categories, setCategories] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<Record<string, MenuItem[]>>({});
   const [isOpen, setIsOpen] = useState(isRestaurantOpen());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Update open status every minute
   useEffect(() => {
@@ -97,42 +101,67 @@ export default function RestaurantPage() {
     };
   }, [filteredItems]);
 
-  // Initialize menu items
+  // Load categories and products from database
   useEffect(() => {
-    const items: Record<string, MenuItem[]> = {};
-    categories.forEach(cat => {
-      items[cat.id] = getMenuItemsByCategory(cat.id);
-    });
-    setFilteredItems(items);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [categoriesResult, productsResult] = await Promise.all([
+          getActiveCategories(),
+          getAllAvailableProducts(),
+        ]);
+
+        if (categoriesResult.success && categoriesResult.categories) {
+          setCategories(categoriesResult.categories);
+          if (categoriesResult.categories.length > 0) {
+            setActiveCategory(categoriesResult.categories[0].id);
+          }
+        }
+
+        if (productsResult.success && productsResult.products) {
+          const items: Record<string, MenuItem[]> = {};
+          productsResult.products.forEach(product => {
+            if (!items[product.categoryId]) {
+              items[product.categoryId] = [];
+            }
+            items[product.categoryId].push(product);
+          });
+          setAllProducts(items);
+          setFilteredItems(items);
+        }
+      } catch (error) {
+        console.error('Error loading menu data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      const items: Record<string, MenuItem[]> = {};
-      categories.forEach(cat => {
-        items[cat.id] = getMenuItemsByCategory(cat.id);
-      });
-      setFilteredItems(items);
+      setFilteredItems(allProducts);
     } else {
       const query = searchQuery.toLowerCase();
       const filtered: Record<string, MenuItem[]> = {};
       
-      categories.forEach(cat => {
-        const categoryItems = getMenuItemsByCategory(cat.id).filter(item =>
+      Object.entries(allProducts).forEach(([categoryId, items]) => {
+        const categoryItems = items.filter(item =>
           item.name.toLowerCase().includes(query) ||
           item.nameEn.toLowerCase().includes(query) ||
           item.description.toLowerCase().includes(query) ||
           item.descriptionEn.toLowerCase().includes(query) ||
-          item.ingredients.some(ing => ing.toLowerCase().includes(query))
+          item.ingredients.some((ing: string) => ing.toLowerCase().includes(query))
         );
         if (categoryItems.length > 0) {
-          filtered[cat.id] = categoryItems;
+          filtered[categoryId] = categoryItems;
         }
       });
       
       setFilteredItems(filtered);
     }
-  }, [searchQuery]);
+  }, [searchQuery, allProducts]);
 
   const handleAddToCart = (item: MenuItem) => {
     addItem({
@@ -351,15 +380,22 @@ export default function RestaurantPage() {
               />
 
               <div className="space-y-8">
-                {Object.entries(filteredItems).map(([categoryId, items]) => (
-                  <MenuSection
-                    key={categoryId}
-                    id={categoryId}
-                    title={categories.find(c => c.id === categoryId)?.name || ''}
-                    items={items}
-                    onItemClick={handleItemClick}
-                  />
-                ))}
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    <p className="mt-4 text-gray-600">Lade Menü...</p>
+                  </div>
+                ) : (
+                  Object.entries(filteredItems).map(([categoryId, items]) => (
+                    <MenuSection
+                      key={categoryId}
+                      id={categoryId}
+                      title={categories.find((c: any) => c.id === categoryId)?.name || ''}
+                      items={items}
+                      onItemClick={handleItemClick}
+                    />
+                  ))
+                )}
               </div>
             </div>
 

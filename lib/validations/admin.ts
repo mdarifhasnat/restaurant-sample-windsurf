@@ -16,8 +16,10 @@ export const CreateProductSchema = z.object({
   isActive: z.boolean().default(true),
   isAvailable: z.boolean().default(true),
   allergens: z.array(z.string()).optional(),
-  calories: z.number().int().min(0).optional(),
-  preparationTime: z.number().int().min(0).optional(),
+  // calories: z.number().int().min(0).optional(),
+  // preparationTime: z.number().int().min(0).optional(),
+  preparationTime: z.coerce.number().min(0),
+  calories: z.coerce.number().min(0).optional(),
 });
 
 export const UpdateProductSchema = CreateProductSchema.partial().extend({
