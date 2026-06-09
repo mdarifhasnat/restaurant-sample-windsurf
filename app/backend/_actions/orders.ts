@@ -84,6 +84,13 @@ export async function getOrders({
 
 export async function getOrderById(orderId: string) {
   try {
+    if (!orderId) {
+      return {
+        success: false,
+        error: 'Bestell-ID ist erforderlich',
+      };
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {

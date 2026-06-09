@@ -3,22 +3,23 @@ import { ArrowLeft, Clock, MapPin, Phone, Mail, Package, Check, X } from 'lucide
 import Link from 'next/link';
 import AcceptOrderForm from './AcceptOrderForm';
 import StatusUpdateForm from './StatusUpdateForm';
+import { notFound } from 'next/navigation';
 
 export default async function OrderDetailPage({
   params,
 }: {
-  params: { orderId: string };
+  params: Promise<{ orderId: string }>;
 }) {
-  const result = await getOrderById(params.orderId);
+  const { orderId } = await params;
+
+  if (!orderId) {
+    notFound();
+  }
+
+  const result = await getOrderById(orderId);
 
   if (!result.success || !result.order) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{result.error || 'Bestellung nicht gefunden'}</p>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
   const order = result.order;
