@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE_NAME = 'admin_session';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if the request is for /backend routes (except login)
@@ -18,8 +18,8 @@ export function proxy(request: NextRequest) {
     try {
       const session = JSON.parse(sessionCookie.value);
       
-      // Verify session has required fields
-      if (!session.userId || !session.email || !session.role) {
+      // Verify session has required fields and ADMIN role
+      if (!session.userId || !session.email || !session.role || session.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/backend/login', request.url));
       }
     } catch (error) {
