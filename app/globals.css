@@ -24,3 +24,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Print styles for kitchen ticket */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-ticket {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body > *:not(.print-ticket) {
+    display: none !important;
+  }
+}

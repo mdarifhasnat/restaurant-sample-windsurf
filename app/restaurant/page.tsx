@@ -43,6 +43,8 @@ export default function RestaurantPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPreOrderMode, setIsPreOrderMode] = useState(false);
+  const [preOrderDateTime, setPreOrderDateTime] = useState('');
 
   // Update open status every minute
   useEffect(() => {
@@ -203,6 +205,14 @@ export default function RestaurantPage() {
     if (address) {
       localStorage.setItem('deliveryAddress', address);
     }
+    // Store pre-order information if in pre-order mode
+    if (isPreOrderMode && preOrderDateTime) {
+      localStorage.setItem('isPreOrder', 'true');
+      localStorage.setItem('preOrderDateTime', preOrderDateTime);
+    } else {
+      localStorage.removeItem('isPreOrder');
+      localStorage.removeItem('preOrderDateTime');
+    }
     // Navigate to checkout page
     window.location.href = '/checkout';
   };
@@ -339,8 +349,8 @@ export default function RestaurantPage() {
         name: itemDetail.name,
         nameEn: itemDetail.name, // Using German name for both for now
         price: itemDetail.basePrice,
-        specialInstructions: JSON.stringify(selectedOptions), // Store options as JSON for now
-        comments: comments,
+        specialInstructions: comments, // Store user comments
+        selectedOptions: JSON.stringify(selectedOptions), // Store selected options as JSON
       });
     }
     handleModalClose();
@@ -373,6 +383,37 @@ export default function RestaurantPage() {
 
               <MenuSearch onSearch={setSearchQuery} placeholder="Gerichte suchen..." />
 
+              {!isOpen && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-amber-800 font-medium text-center">
+                    Restaurant ist derzeit geschlossen. Vorbestellung möglich.
+                  </p>
+                  <p className="text-amber-600 text-sm text-center mt-1">
+                    Wählen Sie ein Datum und Uhrzeit für Ihre Vorbestellung
+                  </p>
+                  <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                    <input
+                      type="datetime-local"
+                      value={preOrderDateTime}
+                      onChange={(e) => setPreOrderDateTime(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="px-4 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <button
+                      onClick={() => setIsPreOrderMode(!!preOrderDateTime)}
+                      disabled={!preOrderDateTime}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        preOrderDateTime
+                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {isPreOrderMode ? 'Vorbestellung aktiv' : 'Vorbestellung starten'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <CategoryTabs
                 categories={categories}
                 activeCategory={activeCategory}
@@ -393,6 +434,8 @@ export default function RestaurantPage() {
                       title={categories.find((c: any) => c.id === categoryId)?.name || ''}
                       items={items}
                       onItemClick={handleItemClick}
+                      isRestaurantOpen={isOpen}
+                      isPreOrderMode={isPreOrderMode}
                     />
                   ))
                 )}

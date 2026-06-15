@@ -82,6 +82,7 @@ model Product {
   updatedAt       DateTime       @updatedAt
   orderItems      OrderItem[]
   images          ProductImage[]
+  options         ProductOption[]
   category        Category       @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
@@ -104,6 +105,26 @@ model ProductImage {
   @@map("product_images")
 }
 
+model ProductOption {
+  id          String      @id @default(cuid())
+  productId   String
+  name        String
+  nameDe      String
+  nameEn      String?
+  priceAdd    Decimal     @db.Decimal(10, 2) @default(0)
+  type        OptionType
+  isRequired  Boolean     @default(false)
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([isActive])
+  @@map("product_options")
+}
+
 model Order {
   id                        String       @id @default(cuid())
   customerType              CustomerType
@@ -123,6 +144,8 @@ model Order {
   total                     Decimal      @db.Decimal(10, 2)
   orderNotes                String?
   couponId                  String?
+  isPreOrder                Boolean      @default(false)
+  preOrderDateTime          DateTime?
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
   confirmedAt               DateTime?
@@ -140,6 +163,7 @@ model Order {
   @@index([orderType])
   @@index([createdAt])
   @@index([email])
+  @@index([isPreOrder])
   @@map("orders")
 }
 
@@ -264,4 +288,12 @@ enum CouponType {
 enum UserRole {
   CUSTOMER
   ADMIN
+}
+
+enum OptionType {
+  SIZE
+  EXTRAS
+  TOPPINGS
+  SAUCES
+  SPICE_LEVEL
 }

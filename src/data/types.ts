@@ -55,4 +55,5 @@ export interface CartItem {
   quantity: number;
   specialInstructions?: string;
   comments?: string;
+  selectedOptions?: string; // JSON string of selected options
 }

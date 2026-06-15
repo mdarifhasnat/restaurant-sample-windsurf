@@ -9,6 +9,7 @@ interface CartContextType {
   removeItem: (itemId: string) => void;
   increaseQuantity: (itemId: string) => void;
   decreaseQuantity: (itemId: string) => void;
+  updateItemComment: (itemId: string, comment: string) => void;
   clearCart: () => void;
   subtotal: number;
   total: number;
@@ -94,6 +95,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  const updateItemComment = (itemId: string, comment: string) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === itemId ? { ...item, specialInstructions: comment } : item
+      )
+    );
+  };
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = subtotal; // Can add delivery fee, tax, etc. here
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -104,6 +113,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     removeItem,
     increaseQuantity,
     decreaseQuantity,
+    updateItemComment,
     clearCart,
     subtotal,
     total,

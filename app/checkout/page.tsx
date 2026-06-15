@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import CheckoutOptionSelector from '@/components/checkout/CheckoutOptionSelector';
@@ -24,6 +24,16 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD'>('CASH');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPreOrder, setIsPreOrder] = useState(false);
+  const [preOrderDateTime, setPreOrderDateTime] = useState<string>('');
+
+  // Load pre-order data from localStorage on mount
+  useEffect(() => {
+    const isPreOrderStored = localStorage.getItem('isPreOrder') === 'true';
+    const preOrderDateTimeStored = localStorage.getItem('preOrderDateTime') || '';
+    setIsPreOrder(isPreOrderStored);
+    setPreOrderDateTime(preOrderDateTimeStored);
+  }, []);
 
   const deliveryFee = orderType === 'delivery' ? 2.90 : 0;
   const total = subtotal + deliveryFee;
@@ -33,13 +43,15 @@ export default function CheckoutPage() {
       id: item.menuItemId,
       dishId: item.menuItemId,
       name: item.name,
-      description: item.comments || '',
+      description: item.specialInstructions || '',
       price: item.price,
       quantity: item.quantity,
     })),
     subtotal,
     deliveryFee,
     total,
+    isPreOrder,
+    preOrderDateTime,
   };
 
   const handleOptionSelect = (option: CheckoutOption) => {
@@ -98,6 +110,12 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Check if pre-order is required (restaurant closed)
+    if (isPreOrder && !preOrderDateTime) {
+      setError('Bitte wählen Sie ein Datum und Uhrzeit für Ihre Vorbestellung');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -123,9 +141,11 @@ export default function CheckoutPage() {
           productId: item.menuItemId,
           quantity: item.quantity,
           selectedOptions: undefined, // TODO: Add selectedOptions when customization is implemented
-          specialInstructions: item.comments,
+          specialInstructions: item.specialInstructions,
         })),
         paymentMethod: paymentMethod,
+        isPreOrder: isPreOrder,
+        preOrderDateTime: preOrderDateTime,
       };
 
       const response = await fetch('/api/orders', {

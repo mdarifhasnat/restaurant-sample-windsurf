@@ -1,11 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface NavbarProps {
   lang?: 'de' | 'en';
   onLanguageChange?: (lang: 'de' | 'en') => void;
+}
+
+// Helper function to check if restaurant is open
+function isRestaurantOpen(): { isOpen: boolean; message: string } {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const currentTime = currentHour * 60 + currentMinute;
+
+  // Restaurant hours: 11:00 - 22:00
+  const openTime = 11 * 60; // 11:00
+  const closeTime = 22 * 60; // 22:00
+
+  const isOpen = currentTime >= openTime && currentTime < closeTime;
+
+  if (isOpen) {
+    const hoursUntilClose = Math.floor((closeTime - currentTime) / 60);
+    return {
+      isOpen: true,
+      message: `Geöffnet bis 22:00`
+    };
+  } else {
+    return {
+      isOpen: false,
+      message: 'Geschlossen'
+    };
+  }
 }
 
 const translations = {
@@ -22,7 +49,17 @@ const translations = {
 export default function Navbar({ lang = 'de', onLanguageChange }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState<'de' | 'en'>(lang);
+  const [restaurantStatus, setRestaurantStatus] = useState(isRestaurantOpen());
   const t = translations[currentLang];
+
+  // Update restaurant status every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRestaurantStatus(isRestaurantOpen());
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLanguageChange = (newLang: 'de' | 'en') => {
     setCurrentLang(newLang);
@@ -54,6 +91,15 @@ export default function Navbar({ lang = 'de', onLanguageChange }: NavbarProps) {
             <Link href="/restaurant" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
               {t.menu}
             </Link>
+
+            {/* Restaurant Status */}
+            <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              restaurantStatus.isOpen
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {restaurantStatus.message}
+            </div>
 
             {/* Language Toggle */}
             <div className="flex items-center space-x-2 border-l border-gray-200 pl-6">

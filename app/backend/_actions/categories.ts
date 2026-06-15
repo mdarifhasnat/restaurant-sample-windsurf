@@ -15,10 +15,14 @@ import { revalidatePath } from "next/cache";
 
 export async function getCategories({
   search,
+  sortBy = 'sortOrder',
+  sortOrder = 'asc',
   limit = 50,
   offset = 0,
 }: {
   search?: string;
+  sortBy?: 'sortOrder' | 'nameDe';
+  sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 } = {}) {
@@ -29,6 +33,7 @@ export async function getCategories({
 
     if (search) {
       where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
         { nameDe: { contains: search, mode: "insensitive" } },
         { nameEn: { contains: search, mode: "insensitive" } },
       ];
@@ -41,7 +46,7 @@ export async function getCategories({
           select: { products: true },
         },
       },
-      orderBy: { sortOrder: "asc" },
+      orderBy: { [sortBy]: sortOrder },
       take: limit,
       skip: offset,
     });

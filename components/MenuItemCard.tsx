@@ -6,12 +6,15 @@ import { MenuItem } from '@/src/data/types';
 interface MenuItemCardProps {
   item: MenuItem;
   onItemClick?: (item: MenuItem) => void;
+  isRestaurantOpen?: boolean;
+  isPreOrderMode?: boolean;
 }
 
-export default function MenuItemCard({ item, onItemClick }: MenuItemCardProps) {
+export default function MenuItemCard({ item, onItemClick, isRestaurantOpen = true, isPreOrderMode = false }: MenuItemCardProps) {
   const [showAllergens, setShowAllergens] = useState(false);
   const price = item.discountPrice || item.basePrice;
   const hasDiscount = item.discountPrice && item.discountPrice < item.basePrice;
+  const isDisabled = !item.available || (!isRestaurantOpen && !isPreOrderMode);
 
   return (
     <div 
@@ -79,11 +82,13 @@ export default function MenuItemCard({ item, onItemClick }: MenuItemCardProps) {
             </div>
             
             <button
-              disabled={!item.available}
+              disabled={isDisabled}
               className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={`View ${item.name} details`}
             >
-              <span className="hidden sm:inline">Hinzufügen</span>
+              <span className="hidden sm:inline">
+                {!isRestaurantOpen && !isPreOrderMode ? 'Geschlossen' : isPreOrderMode ? 'Vorbestellen' : 'Hinzufügen'}
+              </span>
               <span className="sm:hidden">+</span>
             </button>
           </div>

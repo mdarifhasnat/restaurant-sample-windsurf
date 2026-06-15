@@ -3,7 +3,9 @@ import { ArrowLeft, Clock, MapPin, Phone, Mail, Package, Check, X } from 'lucide
 import Link from 'next/link';
 import AcceptOrderForm from './AcceptOrderForm';
 import StatusUpdateForm from './StatusUpdateForm';
+import PrintOrderButton from '../components/PrintOrderButton';
 import { notFound } from 'next/navigation';
+import { formatSelectedOptions } from '@/lib/utils/options';
 
 export default async function OrderDetailPage({
   params,
@@ -74,7 +76,7 @@ export default async function OrderDetailPage({
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 no-print">
       <div className="mb-6">
         <Link
           href="/backend/orders"
@@ -86,9 +88,13 @@ export default async function OrderDetailPage({
         <h1 className="text-3xl font-bold text-gray-900">Bestellung #{order.orderNumber}</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Print Button */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <PrintOrderButton />
+          </div>
           {/* Order Status */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -124,6 +130,20 @@ export default async function OrderDetailPage({
               )}
             </div>
           </div>
+
+          {/* Pre-order Information */}
+          {order.isPreOrder && order.preOrderDateTime && (
+            <div className="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <h2 className="text-lg font-semibold text-amber-900">Vorbestellung</h2>
+              </div>
+              <div className="text-sm">
+                <span className="text-amber-700">Gewünschtes Liefer-/Abholzeit:</span>
+                <p className="font-medium text-amber-900">{formatDate(order.preOrderDateTime)}</p>
+              </div>
+            </div>
+          )}
 
           {/* Customer Information */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -174,10 +194,13 @@ export default async function OrderDetailPage({
                       <Package className="w-5 h-5 text-gray-400 mr-3 mt-1" />
                       <div>
                         <p className="font-medium text-gray-900">{item.productName}</p>
+                        {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
+                          <p className="text-sm text-gray-500 mt-1">{formatSelectedOptions(item.specialInstructions)}</p>
+                        )}
                         {item.productDescription && (
                           <p className="text-sm text-gray-500 mt-1">{item.productDescription}</p>
                         )}
-                        {item.specialInstructions && (
+                        {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
                           <p className="text-sm text-gray-500 mt-1">
                             Sonderwünsche: {item.specialInstructions}
                           </p>
@@ -205,6 +228,115 @@ export default async function OrderDetailPage({
               <p className="text-gray-600">{order.orderNotes}</p>
             </div>
           )}
+        </div>
+
+        {/* Printable Kitchen Ticket - Only visible during print */}
+        <div className="print-ticket hidden">
+          <div className="bg-white p-6 max-w-md mx-auto font-mono text-sm">
+            {/* Restaurant Name */}
+            <div className="text-center border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+              <h1 className="text-xl font-bold">Speisenreise</h1>
+              <p className="text-gray-600">Küchenbon</p>
+            </div>
+
+            {/* Order Info */}
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between">
+                <span>Bestellnummer:</span>
+                <span className="font-bold">{order.orderNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Zeit:</span>
+                <span>{formatDate(order.createdAt)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Typ:</span>
+                <span className="font-bold">{getOrderTypeLabel(order.orderType)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Kunde:</span>
+                <span>{order.phone}</span>
+              </div>
+            </div>
+
+            {/* Pre-order Info */}
+            {order.isPreOrder && order.preOrderDateTime && (
+              <div className="border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+                <div className="font-bold text-center text-lg mb-2">VORBESTELLUNG</div>
+                <div className="flex justify-between">
+                  <span>Gewünschte Zeit:</span>
+                  <span className="font-bold">{formatDate(order.preOrderDateTime)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Delivery Address if delivery */}
+            {order.orderType === 'DELIVERY' && (
+              <div className="border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+                <div className="font-bold mb-2">Lieferadresse:</div>
+                <div>{order.deliveryStreet} {order.deliveryHouseNumber}</div>
+                <div>{order.deliveryPostalCode} {order.deliveryCity}</div>
+                {order.deliveryInstructions && (
+                  <div className="mt-2 text-gray-600">Hinweis: {order.deliveryInstructions}</div>
+                )}
+              </div>
+            )}
+
+            {/* Items */}
+            <div className="border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+              <div className="font-bold mb-2">Artikel:</div>
+              {order.items.map((item) => (
+                <div key={item.id} className="flex justify-between mb-2">
+                  <div>
+                    <span className="font-bold">{item.quantity}x</span> {item.productName}
+                    {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
+                      <div className="text-gray-600 text-xs mt-1">{formatSelectedOptions(item.specialInstructions)}</div>
+                    )}
+                    {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
+                      <div className="text-gray-600 text-xs mt-1">Sonderwünsche: {item.specialInstructions}</div>
+                    )}
+                  </div>
+                  <span>{formatCurrency(Number(item.productPrice) * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Special Notes */}
+            {order.orderNotes && (
+              <div className="border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+                <div className="font-bold mb-2">Bestellnotizen:</div>
+                <div>{order.orderNotes}</div>
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Zwischensumme:</span>
+                <span>{formatCurrency(Number(order.subtotal))}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Liefergebühr:</span>
+                <span>{formatCurrency(Number(order.deliveryFee))}</span>
+              </div>
+              {Number(order.discountAmount) > 0 && (
+                <div className="flex justify-between">
+                  <span>Rabatt:</span>
+                  <span>-{formatCurrency(Number(order.discountAmount))}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-lg border-t-2 border-dashed border-gray-400 pt-2">
+                <span>GESAMT:</span>
+                <span>{formatCurrency(Number(order.total))}</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center mt-6 pt-4 border-t-2 border-dashed border-gray-400 text-xs text-gray-600">
+              <p>Vielen Dank für Ihre Bestellung!</p>
+              <p className="mt-1">Speisenreise</p>
+            </div>
+          </div>
         </div>
 
         {/* Sidebar */}

@@ -7,18 +7,21 @@ import {
   ShoppingCart, 
   Package, 
   FolderTree, 
+  FileText,
   Settings,
   Menu,
   X,
   LogOut
 } from 'lucide-react';
 import { useState } from 'react';
+import NewOrderNotification from './components/NewOrderNotification';
 
 const navigation = [
   { name: 'Dashboard', href: '/backend', icon: LayoutDashboard },
   { name: 'Bestellungen', href: '/backend/orders', icon: ShoppingCart },
   { name: 'Produkte', href: '/backend/products', icon: Package },
   { name: 'Kategorien', href: '/backend/categories', icon: FolderTree },
+  { name: 'Berichte', href: '/backend/reports', icon: FileText },
   { name: 'Einstellungen', href: '/backend/settings', icon: Settings },
 ];
 
@@ -134,6 +137,9 @@ export default function BackendLayout({
           {children}
         </main>
       </div>
+
+      {/* New Order Notification */}
+      <NewOrderNotification />
     </div>
   );
 }

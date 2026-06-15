@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import Navbar from '@/components/Navbar';
+import { formatSelectedOptions } from '@/lib/utils/options';
 
 interface PageProps {
   params: Promise<{
@@ -84,14 +85,45 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
 
           {/* Order Details */}
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            {/* Pre-order Info */}
+            {order.isPreOrder && order.preOrderDateTime && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="font-semibold text-amber-900">Vorbestellung</p>
+                </div>
+                <p className="text-sm text-amber-700">
+                  Gewünschtes Liefer-/Abholzeit: {new Intl.DateTimeFormat('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }).format(new Date(order.preOrderDateTime))}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Bestellnummer</p>
                 <p className="text-lg font-semibold text-gray-900">{order.orderNumber}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-1">Geschätzte Lieferzeit</p>
-                <p className="text-lg font-semibold text-gray-900">30-45 Minuten</p>
+                <p className="text-sm text-gray-600 mb-1">{order.isPreOrder ? 'Gewünschte Zeit' : 'Geschätzte Lieferzeit'}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {order.isPreOrder && order.preOrderDateTime
+                    ? new Intl.DateTimeFormat('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }).format(new Date(order.preOrderDateTime))
+                    : '30-45 Minuten'}
+                </p>
               </div>
             </div>
 
@@ -111,7 +143,10 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{item.productNameDe || item.productName}</p>
                     <p className="text-sm text-gray-600">Menge: {item.quantity}</p>
-                    {item.specialInstructions && (
+                    {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
+                      <p className="text-xs text-gray-500 italic mt-1">📝 {formatSelectedOptions(item.specialInstructions)}</p>
+                    )}
+                    {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
                       <p className="text-xs text-gray-500 italic mt-1">📝 {item.specialInstructions}</p>
                     )}
                   </div>

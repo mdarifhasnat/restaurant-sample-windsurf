@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { Printer } from 'lucide-react';
 
 export default function AcceptOrderForm({ orderId }: { orderId: string }) {
   const [preparationMinutes, setPreparationMinutes] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showPrintOption, setShowPrintOption] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +25,20 @@ export default function AcceptOrderForm({ orderId }: { orderId: string }) {
 
       if (data.success) {
         setMessage({ type: 'success', text: 'Bestellung erfolgreich angenommen!' });
-        setTimeout(() => window.location.reload(), 1500);
+        setShowPrintOption(true);
+        // Optional: Auto-open print dialog after accepting
+        // setTimeout(() => window.print(), 500);
+        
+        // NOTE: For silent thermal printer auto-print, you would need to implement QZ Tray
+        // or a local print bridge solution. QZ Tray (https://qz.io/) allows direct communication
+        // with thermal printers from web applications without user interaction.
+        // This requires:
+        // 1. QZ Tray software installed on the kitchen computer
+        // 2. Websocket connection to QZ Tray
+        // 3. ESC/POS commands for thermal printer formatting
+        // For now, we use window.print() which requires user confirmation.
+        
+        setTimeout(() => window.location.reload(), 3000);
       } else {
         setMessage({ type: 'error', text: data.error || 'Fehler beim Annehmen der Bestellung' });
       }
@@ -32,6 +47,10 @@ export default function AcceptOrderForm({ orderId }: { orderId: string }) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -86,6 +105,17 @@ export default function AcceptOrderForm({ orderId }: { orderId: string }) {
         }`}>
           {message.text}
         </div>
+      )}
+
+      {showPrintOption && (
+        <button
+          type="button"
+          onClick={handlePrint}
+          className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-gray-800 font-medium flex items-center justify-center gap-2"
+        >
+          <Printer className="w-4 h-4" />
+          Jetzt Küchenbon drucken
+        </button>
       )}
 
       <button

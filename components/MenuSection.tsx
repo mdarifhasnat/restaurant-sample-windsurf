@@ -5,17 +5,19 @@ import { MenuItem } from '@/src/data/types';
 
 interface MenuSectionProps {
   id: string;
-  title: string;  
+  title: string;
   items: MenuItem[];
   onItemClick?: (item: MenuItem) => void;
+  isRestaurantOpen?: boolean;
+  isPreOrderMode?: boolean;
 }
 
-export default function MenuSection({ id, title, items, onItemClick }: MenuSectionProps) {
+export default function MenuSection({ id, title, items, onItemClick, isRestaurantOpen = true, isPreOrderMode = false }: MenuSectionProps) {
   return (
     <div id={`section-${id}`} className="mb-8 scroll-mt-40">
       <div className="space-y-4">
         {items.map((item) => (
-          <MenuItemCard key={item.id} item={item} onItemClick={onItemClick} />
+          <MenuItemCard key={item.id} item={item} onItemClick={onItemClick} isRestaurantOpen={isRestaurantOpen} isPreOrderMode={isPreOrderMode} />
         ))}
       </div>
     </div>

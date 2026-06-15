@@ -146,6 +146,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  selectedOptions?: string; // JSON string of selected options
 }
 
 // ============================================================================
@@ -158,6 +159,8 @@ export interface OrderSummary {
   subtotal: number;
   deliveryFee: number;
   total: number;
+  isPreOrder?: boolean;
+  preOrderDateTime?: string;
 }
 
 // ============================================================================

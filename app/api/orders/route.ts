@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
     // Extract payment method from request body (optional for now)
     const paymentMethod = (body.paymentMethod as PaymentMethod) || PaymentMethod.CASH;
 
+    // Extract pre-order information
+    const isPreOrder = body.isPreOrder === true;
+    const preOrderDateTime = body.preOrderDateTime ? new Date(body.preOrderDateTime) : null;
+
     // Fetch products from database
     const productIds = data.items.map((item) => item.productId);
     const products = await prisma.product.findMany({
@@ -110,6 +114,8 @@ export async function POST(request: NextRequest) {
           discountAmount: new Decimal(0),
           total: new Decimal(total),
           orderNotes: data.orderNotes,
+          isPreOrder: isPreOrder,
+          preOrderDateTime: preOrderDateTime,
         },
       });
 

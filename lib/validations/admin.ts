@@ -13,6 +13,8 @@ export const CreateProductSchema = z.object({
   descriptionEn: z.string().optional(),
   price: z.string().min(1, 'Preis ist erforderlich').regex(/^\d+(\.\d{1,2})?$/, 'Ungültiges Preisformat'),
   categoryId: z.string().min(1, 'Kategorie ist erforderlich'),
+  imageUrl: z.string().optional(),
+  imageFile: z.any().optional(),
   isActive: z.boolean().default(true),
   isAvailable: z.boolean().default(true),
   allergens: z.array(z.string()).optional(),

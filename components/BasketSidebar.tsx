@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import DeliveryModal from './DeliveryModal';
+import { useCart } from '@/hooks/useCart';
+import { formatSelectedOptions } from '@/lib/utils/options';
 
 interface CartItem {
   id: string;
   name: string;
   price: number;
   quantity: number;
-  comments?: string;
+  specialInstructions?: string;
+  selectedOptions?: string;
 }
 
 interface BasketSidebarProps {
@@ -29,6 +32,8 @@ export default function BasketSidebar({
   onCheckout,
 }: BasketSidebarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { updateItemComment } = useCart();
+  const [editingComments, setEditingComments] = useState<Record<string, string>>({});
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = subtotal + deliveryFee;
   const canCheckout = subtotal >= minimumOrder;
@@ -41,14 +46,19 @@ export default function BasketSidebar({
     onCheckout(orderType, address);
   };
 
+  const handleCommentChange = (itemId: string, comment: string) => {
+    setEditingComments(prev => ({ ...prev, [itemId]: comment }));
+    updateItemComment(itemId, comment);
+  };
+
   return (
-    <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden w-full">
-      <div className="p-5 border-b border-gray-100 text-center">
+    <div className="sticky top-24 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden w-full max-h-[calc(100vh-8rem)] flex flex-col">
+      <div className="p-5 border-b border-gray-100 text-center flex-shrink-0">
         <h3 className="text-xl font-bold text-gray-900">Ihr Warenkorb</h3>
       </div>
 
       {items.length === 0 ? (
-        <div className="p-8 text-center">
+        <div className="p-8 text-center flex-1">
           <svg
             className="w-16 h-16 mx-auto text-gray-300 mb-4"
             fill="none"
@@ -64,53 +74,64 @@ export default function BasketSidebar({
         </div>
       ) : (
         <>
-          <div className="p-5 max-h-96 overflow-y-auto">
+          <div className="p-5 overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 24rem)' }}>
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
-                    <p className="text-sm text-gray-600">{item.price.toFixed(2)}€</p>
-                    {item.comments && (
-                      <p className="text-xs text-gray-500 mt-1 italic bg-gray-50 p-2 rounded">
-                        📝 {item.comments}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center border border-gray-200 rounded-lg">
+                <div key={item.id} className="flex flex-col gap-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 truncate">{item.name}</h4>
+                      <p className="text-sm text-gray-600">{item.price.toFixed(2)}€</p>
+                      {item.selectedOptions && formatSelectedOptions(item.selectedOptions) && (
+                        <p className="text-xs text-gray-500 mt-1">{formatSelectedOptions(item.selectedOptions)}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
+                        aria-label="Decrease quantity"
+                      >
+                        -
+                      </button>
+                      <span className="px-2 text-gray-900 font-medium text-sm">{item.quantity}</span>
+                      <button
+                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+
                     <button
-                      onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
-                      aria-label="Decrease quantity"
+                      onClick={() => onRemove(item.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                      aria-label="Remove item"
                     >
-                      -
-                    </button>
-                    <span className="px-2 text-gray-900 font-medium text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      className="px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors text-sm"
-                      aria-label="Increase quantity"
-                    >
-                      +
+                      <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
 
-                  <button
-                    onClick={() => onRemove(item.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                    aria-label="Remove item"
-                  >
-                    <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  {/* Comment Input for each cart item */}
+                  <div className="mt-2">
+                    <textarea
+                      value={editingComments[item.id] || item.specialInstructions || ''}
+                      onChange={(e) => handleCommentChange(item.id, e.target.value)}
+                      placeholder="Kommentar hinzufügen (z.B. ohne Zwiebeln)"
+                      rows={2}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="p-5 border-t border-gray-100 bg-gray-50">
+          <div className="p-5 border-t border-gray-100 bg-gray-50 flex-shrink-0">
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Zwischensumme</span>

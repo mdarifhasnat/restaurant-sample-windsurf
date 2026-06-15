@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../_actions/categories';
-import { Search, Plus, Edit, Trash2, X, GripVertical } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, GripVertical, ChevronDown } from 'lucide-react';
 
 export default function CategoriesPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -22,16 +24,35 @@ export default function CategoriesPage() {
     isActive: true,
   });
 
+  // Get filter values from URL params
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'sortOrder';
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
+
   const loadData = async () => {
     setLoading(true);
-    const result = await getCategories({ search: search || undefined });
+    const result = await getCategories({
+      search: search || undefined,
+      sortBy: sortBy as 'sortOrder' | 'nameDe',
+      sortOrder: sortOrder as 'asc' | 'desc',
+    });
     if (result.success && result.categories) setCategories(result.categories);
     setLoading(false);
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [searchParams]);
+
+  const updateFilter = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`/backend/categories?${params.toString()}`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,18 +128,39 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      {/* Search */}
+      {/* Search and Filter */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Kategorien suchen..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && loadData()}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Kategoriename suchen..."
+              value={search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+            />
+          </div>
+
+          {/* Sorting */}
+          <div className="relative">
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [sort, order] = e.target.value.split('-');
+                updateFilter('sortBy', sort);
+                updateFilter('sortOrder', order);
+              }}
+              className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value="sortOrder-asc">Sortierung aufsteigend</option>
+              <option value="sortOrder-desc">Sortierung absteigend</option>
+              <option value="nameDe-asc">Name A → Z</option>
+              <option value="nameDe-desc">Name Z → A</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+          </div>
         </div>
       </div>
 

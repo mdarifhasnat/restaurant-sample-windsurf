@@ -17,11 +17,17 @@ import { revalidatePath } from "next/cache";
 export async function getProducts({
   categoryId,
   search,
+  availability,
+  sortBy = 'nameDe',
+  sortOrder = 'asc',
   limit = 50,
   offset = 0,
 }: {
   categoryId?: string;
   search?: string;
+  availability?: 'all' | 'available' | 'unavailable';
+  sortBy?: 'nameDe' | 'price';
+  sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 } = {}) {
@@ -36,9 +42,16 @@ export async function getProducts({
 
     if (search) {
       where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
         { nameDe: { contains: search, mode: "insensitive" } },
         { nameEn: { contains: search, mode: "insensitive" } },
       ];
+    }
+
+    if (availability === 'available') {
+      where.isAvailable = true;
+    } else if (availability === 'unavailable') {
+      where.isAvailable = false;
     }
 
     const products = await prisma.product.findMany({
@@ -47,7 +60,7 @@ export async function getProducts({
         category: true,
         images: true,
       },
-      orderBy: { nameDe: "asc" },
+      orderBy: { [sortBy]: sortOrder },
       take: limit,
       skip: offset,
     });
@@ -122,6 +135,19 @@ export async function createProduct(input: CreateProductInput) {
   try {
     const validated = CreateProductSchema.parse(input);
 
+    let imageUrl = validated.imageUrl;
+
+    // Handle file upload
+    if (validated.imageFile) {
+      // For now, we'll convert the file to base64 and store it
+      // In production, you'd want to upload to a cloud storage service
+      const bytes = await validated.imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${validated.imageFile.type};base64,${base64}`;
+      imageUrl = dataUrl;
+    }
+
     const product = await prisma.product.create({
       data: {
         name: validated.name,
@@ -142,6 +168,17 @@ export async function createProduct(input: CreateProductInput) {
         category: true,
       },
     });
+
+    // Create product image if imageUrl exists
+    if (imageUrl) {
+      await prisma.productImage.create({
+        data: {
+          productId: product.id,
+          url: imageUrl,
+          sortOrder: 0,
+        },
+      });
+    }
 
     revalidatePath("/backend/products");
     revalidatePath("/backend");
@@ -179,18 +216,29 @@ export async function updateProduct(input: UpdateProductInput) {
 
     const { id, ...updateData } = validated;
 
+    let imageUrl = updateData.imageUrl;
+
+    // Handle file upload
+    if (updateData.imageFile) {
+      const bytes = await updateData.imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${updateData.imageFile.type};base64,${base64}`;
+      imageUrl = dataUrl;
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
         ...(updateData.name !== undefined && { name: updateData.name }),
         ...(updateData.nameDe !== undefined && { nameDe: updateData.nameDe }),
-        ...(updateData.nameEn !== undefined && { 
-          nameEn: updateData.nameEn || updateData.nameDe 
+        ...(updateData.nameEn !== undefined && {
+          nameEn: updateData.nameEn || updateData.nameDe
         }),
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.descriptionDe !== undefined && { descriptionDe: updateData.descriptionDe }),
-        ...(updateData.descriptionEn !== undefined && { 
-          descriptionEn: updateData.descriptionEn || updateData.descriptionDe 
+        ...(updateData.descriptionEn !== undefined && {
+          descriptionEn: updateData.descriptionEn || updateData.descriptionDe
         }),
         ...(updateData.price && { price: new Decimal(updateData.price) }),
         ...(updateData.categoryId && { categoryId: updateData.categoryId }),
@@ -214,6 +262,28 @@ export async function updateProduct(input: UpdateProductInput) {
         category: true,
       },
     });
+
+    // Update or create product image if imageUrl exists
+    if (imageUrl) {
+      const existingImage = await prisma.productImage.findFirst({
+        where: { productId: id },
+      });
+
+      if (existingImage) {
+        await prisma.productImage.update({
+          where: { id: existingImage.id },
+          data: { url: imageUrl },
+        });
+      } else {
+        await prisma.productImage.create({
+          data: {
+            productId: id,
+            url: imageUrl,
+            sortOrder: 0,
+          },
+        });
+      }
+    }
 
     revalidatePath("/backend/products");
     revalidatePath("/backend");

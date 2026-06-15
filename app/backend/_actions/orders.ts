@@ -12,11 +12,23 @@ import { revalidatePath } from 'next/cache';
 export async function getOrders({
   status,
   search,
-  limit = 50,
+  orderType,
+  plz,
+  dateFrom,
+  dateTo,
+  sortBy = 'createdAt',
+  sortOrder = 'desc',
+  limit = 25,
   offset = 0,
 }: {
   status?: OrderStatus;
   search?: string;
+  orderType?: 'DELIVERY' | 'PICKUP';
+  plz?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: 'createdAt' | 'total';
+  sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 } = {}) {
@@ -31,7 +43,26 @@ export async function getOrders({
       where.OR = [
         { orderNumber: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (orderType) {
+      where.orderType = orderType;
+    }
+
+    if (plz) {
+      where.deliveryPostalCode = { contains: plz, mode: 'insensitive' };
+    }
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = dateFrom;
+      }
+      if (dateTo) {
+        where.createdAt.lte = dateTo;
+      }
     }
 
     const orders = await prisma.order.findMany({
@@ -40,7 +71,7 @@ export async function getOrders({
         items: true,
         payments: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
       take: limit,
       skip: offset,
     });
