@@ -13,8 +13,9 @@ import {
   X,
   LogOut
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NewOrderNotification from './components/NewOrderNotification';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 
 const navigation = [
   { name: 'Dashboard', href: '/backend', icon: LayoutDashboard },
@@ -33,6 +34,7 @@ export default function BackendLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { pendingCount } = useOrderNotifications(true);
 
   const handleLogout = async () => {
     try {
@@ -80,6 +82,7 @@ export default function BackendLayout({
             <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
+                const showBadge = item.name === 'Bestellungen' && pendingCount > 0;
                 return (
                   <Link
                     key={item.name}
@@ -91,8 +94,15 @@ export default function BackendLayout({
                     }`}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <item.icon className="w-5 h-5 mr-3" />
-                    {item.name}
+                    <div className="flex items-center flex-1">
+                      <item.icon className="w-5 h-5 mr-3" />
+                      {item.name}
+                    </div>
+                    {showBadge && (
+                      <span className="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
