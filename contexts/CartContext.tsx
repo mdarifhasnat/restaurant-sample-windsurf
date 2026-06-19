@@ -47,12 +47,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (item: Omit<CartItem, 'id' | 'quantity'>) => {
     setItems(prevItems => {
       const existingItem = prevItems.find(
-        i => i.menuItemId === item.menuItemId && i.specialInstructions === item.specialInstructions
+        i => i.menuItemId === item.menuItemId && 
+             i.specialInstructions === item.specialInstructions &&
+             i.selectedOptions === item.selectedOptions
       );
 
       if (existingItem) {
         return prevItems.map(i =>
-          i.menuItemId === item.menuItemId && i.specialInstructions === item.specialInstructions
+          i.menuItemId === item.menuItemId && 
+          i.specialInstructions === item.specialInstructions &&
+          i.selectedOptions === item.selectedOptions
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );

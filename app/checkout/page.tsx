@@ -11,6 +11,11 @@ import { CheckoutOption, CheckoutStep, CustomerInfo, DeliveryAddress, CustomerTy
 import { CustomerInfoFormData, DeliveryAddressFormData } from '@/lib/validations/checkout';
 import { useCart } from '@/contexts/CartContext';
 
+interface User {
+  id: string;
+  email: string;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items: cartItems, clearCart, subtotal } = useCart();
@@ -26,6 +31,15 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPreOrder, setIsPreOrder] = useState(false);
   const [preOrderDateTime, setPreOrderDateTime] = useState<string>('');
+  const [user, setUser] = useState<User | null>(null);
+
+  // Load current user/session on mount
+  // TODO: Implement customer auth system to load actual user session
+  useEffect(() => {
+    // For now, user is always null (guest checkout)
+    // When customer auth is implemented, load the session here
+    setUser(null);
+  }, []);
 
   // Load pre-order data from localStorage on mount
   useEffect(() => {
@@ -120,10 +134,14 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
+      // Determine customer type and ID based on user session
+      const finalCustomerType = user?.id ? 'REGISTERED' : 'GUEST';
+      const finalCustomerId = user?.id ?? null;
+
       // Prepare request body matching Zod validation
       const requestBody = {
-        customerType: customerType === 'guest' ? 'GUEST' : 'REGISTERED',
-        customerId: null, // TODO: Add customerId for registered users when auth is implemented
+        customerType: finalCustomerType,
+        customerId: finalCustomerId,
         customerFirstName: customerInfo.firstName,
         customerLastName: customerInfo.lastName,
         email: customerInfo.email,
@@ -140,12 +158,12 @@ export default function CheckoutPage() {
         items: cartItems.map(item => ({
           productId: item.menuItemId,
           quantity: item.quantity,
-          selectedOptions: undefined, // TODO: Add selectedOptions when customization is implemented
+          selectedOptions: item.selectedOptions || undefined,
           specialInstructions: item.specialInstructions,
         })),
         paymentMethod: paymentMethod,
         isPreOrder: isPreOrder,
-        preOrderDateTime: preOrderDateTime,
+        preOrderDateTime: isPreOrder ? preOrderDateTime : null,
       };
 
       const response = await fetch('/api/orders', {

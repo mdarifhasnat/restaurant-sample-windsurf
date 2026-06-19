@@ -2,24 +2,27 @@
 // ITEM DETAIL MODAL TYPES
 // ============================================================================
 
-export type GroupType = 'radio' | 'checkbox' | 'without' | 'spice';
-
-export interface OptionItem {
+export interface OptionValue {
   id: string;
-  label: string;
-  priceAdd: number; // 0 if free
-  infoText?: string; // allergen info
-  spiceLevel?: number; // 1-3 for spice level items
+  nameDe: string;
+  nameEn: string | null;
+  extraPrice: number;
+  sortOrder: number;
+  isActive: boolean;
+  isDefault: boolean;
 }
 
 export interface OptionGroup {
   id: string;
-  type: GroupType;
-  title: string;
-  helperText?: string;
-  required: boolean;
-  maxSelect?: number;
-  options: OptionItem[];
+  productId: string;
+  nameDe: string;
+  nameEn: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isRequired: boolean;
+  minSelection: number;
+  maxSelection: number;
+  values: OptionValue[];
 }
 
 export interface MenuItemDetail {

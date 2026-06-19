@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { ItemDetailModalProps, SelectedOptions } from '@/types/menu-modal';
+import { ItemDetailModalProps, SelectedOptions, OptionGroup, OptionValue } from '@/types/menu-modal';
 
 export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: ItemDetailModalProps) {
   const [mounted, setMounted] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   const [showAllergenInfo, setShowAllergenInfo] = useState(false);
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -21,8 +23,34 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
       setQuantity(1);
       setSelectedOptions({});
       setShowAllergenInfo(false);
+      // Load option groups from API
+      loadOptionGroups();
     }
-  }, [isOpen]);
+  }, [isOpen, item.id]);
+
+  const loadOptionGroups = async () => {
+    setLoadingOptions(true);
+    try {
+      const response = await fetch(`/api/backend/products/option-groups?productId=${item.id}`);
+      const data = await response.json();
+      if (data.success) {
+        setOptionGroups(data.optionGroups);
+        // Initialize default selections
+        const defaults: SelectedOptions = {};
+        data.optionGroups.forEach((group: OptionGroup) => {
+          const defaultValue = group.values.find(v => v.isDefault);
+          if (defaultValue && group.isRequired) {
+            defaults[group.id] = [defaultValue.id];
+          }
+        });
+        setSelectedOptions(defaults);
+      }
+    } catch (error) {
+      console.error('Error loading option groups:', error);
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
 
   // Calculate total price
   const totalPrice = useMemo(() => {
@@ -31,51 +59,55 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
     // Add price from selected options
     Object.values(selectedOptions).forEach(optionIds => {
       optionIds.forEach(optionId => {
-        item.optionGroups.forEach(group => {
-          const option = group.options.find(opt => opt.id === optionId);
-          if (option) {
-            price += option.priceAdd;
+        optionGroups.forEach(group => {
+          const value = group.values.find(v => v.id === optionId);
+          if (value) {
+            price += value.extraPrice;
           }
         });
       });
     });
 
     return price * quantity;
-  }, [item, selectedOptions, quantity]);
+  }, [item, selectedOptions, quantity, optionGroups]);
 
   // Check if all required sections are filled
   const isFormValid = useMemo(() => {
-    return item.optionGroups.every(group => {
-      if (!group.required) return true;
+    return optionGroups.every(group => {
+      if (!group.isRequired) return true;
       const selected = selectedOptions[group.id] || [];
-      return selected.length > 0;
+      return selected.length >= group.minSelection && selected.length <= group.maxSelection;
     });
-  }, [item, selectedOptions]);
+  }, [optionGroups, selectedOptions]);
 
-  const handleOptionSelect = (groupId: string, optionId: string, type: 'radio' | 'checkbox' | 'without' | 'spice') => {
+  const handleOptionSelect = (groupId: string, valueId: string) => {
     setSelectedOptions(prev => {
-      if (type === 'radio' || type === 'spice') {
-        return {
-          ...prev,
-          [groupId]: [optionId]
-        };
-      } else {
-        const current = prev[groupId] || [];
-        if (current.includes(optionId)) {
-          return {
-            ...prev,
-            [groupId]: current.filter(id => id !== optionId)
-          };
-        } else {
-          const group = item.optionGroups.find(g => g.id === groupId);
-          if (group && group.maxSelect && current.length >= group.maxSelect) {
-            return prev; // Don't add if max reached
+      const group = optionGroups.find(g => g.id === groupId);
+      if (!group) return prev;
+
+      const current = prev[groupId] || [];
+
+      // If maxSelection is 1, treat as radio (single selection)
+      if (group.maxSelection === 1) {
+        if (current.includes(valueId)) {
+          // Deselect if already selected (only if not required)
+          if (!group.isRequired) {
+            return { ...prev, [groupId]: [] };
           }
-          return {
-            ...prev,
-            [groupId]: [...current, optionId]
-          };
+          return prev;
         }
+        return { ...prev, [groupId]: [valueId] };
+      }
+
+      // Multi-selection (checkbox)
+      if (current.includes(valueId)) {
+        const newSelection = current.filter(id => id !== valueId);
+        return { ...prev, [groupId]: newSelection };
+      } else {
+        if (current.length >= group.maxSelection) {
+          return prev; // Don't add if max reached
+        }
+        return { ...prev, [groupId]: [...current, valueId] };
       }
     });
   };
@@ -156,120 +188,94 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
             </div>
 
             {/* Customization Sections */}
-            {item.optionGroups.map(group => {
-              const isSelected = (optionId: string) => (selectedOptions[group.id] || []).includes(optionId);
-              const isSpiceGroup = group.type === 'spice';
-              const isWithoutGroup = group.type === 'without';
-              const isExtraGroup = group.type === 'checkbox' && group.title.toLowerCase().includes('extra');
+            {loadingOptions ? (
+              <div className="px-6 py-8 text-center text-gray-500">
+                Optionen werden geladen...
+              </div>
+            ) : optionGroups.length === 0 ? (
+              <div className="px-6 py-8 text-center text-gray-500">
+                Keine Optionen verfügbar
+              </div>
+            ) : (
+              optionGroups.map(group => {
+                const isSelected = (valueId: string) => (selectedOptions[group.id] || []).includes(valueId);
+                const isRadio = group.maxSelection === 1;
 
-              return (
-                <div key={group.id} className="border-t border-gray-100">
-                  {/* Section Header */}
-                  <div className="px-6 py-4 bg-stone-50">
-                    {group.helperText && (
-                      <p className="text-xs text-gray-500 mb-1">{group.helperText}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">{group.title}</h3>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        group.required
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}>
-                        {group.required ? '1 Required' : 'Optional'}
-                      </span>
+                return (
+                  <div key={group.id} className="border-t border-gray-100">
+                    {/* Section Header */}
+                    <div className="px-6 py-4 bg-stone-50">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900">{group.nameDe}</h3>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          group.isRequired
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-200 text-gray-700'
+                        }`}>
+                          {group.isRequired ? `Pflicht (${group.minSelection}-${group.maxSelection})` : `Optional (${group.minSelection}-${group.maxSelection})`}
+                        </span>
+                      </div>
+                      {group.nameEn && (
+                        <p className="text-xs text-gray-500 mt-1">{group.nameEn}</p>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Options */}
-                  <div className="px-6 py-4 space-y-3">
-                    {group.options.map(option => {
-                      const selected = isSelected(option.id);
-                      
-                      return (
-                        <button
-                          key={option.id}
-                          onClick={() => handleOptionSelect(group.id, option.id, group.type)}
-                          className={`w-full flex items-center justify-between p-4 border rounded-xl transition-all text-left ${
-                            selected
-                              ? isSpiceGroup
-                                ? 'border-red-300 bg-red-50'
-                                : isWithoutGroup
-                                  ? 'border-red-200 bg-red-50'
-                                  : isExtraGroup
-                                    ? 'border-green-300 bg-green-50'
-                                    : 'border-gray-900 bg-gray-50'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center flex-1">
-                            {/* Radio/Checkbox Indicator */}
-                            <div className={`w-5 h-5 mr-3 flex items-center justify-center ${
-                              group.type === 'radio' || group.type === 'spice' ? 'rounded-full' : 'rounded'
-                            } border-2 ${
+                    {/* Options */}
+                    <div className="px-6 py-4 space-y-3">
+                      {group.values.filter(v => v.isActive).map(value => {
+                        const selected = isSelected(value.id);
+                        
+                        return (
+                          <button
+                            key={value.id}
+                            onClick={() => handleOptionSelect(group.id, value.id)}
+                            className={`w-full flex items-center justify-between p-4 border rounded-xl transition-all text-left ${
                               selected
-                                ? 'border-gray-900 bg-gray-900'
-                                : 'border-gray-300'
-                            }`}>
-                              {selected && (
-                                <div className={`w-2.5 h-2.5 bg-white ${
-                                  group.type === 'radio' || group.type === 'spice' ? 'rounded-full' : 'rounded-sm'
-                                }`} />
-                              )}
+                                ? 'border-gray-900 bg-gray-50'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-center flex-1">
+                              {/* Radio/Checkbox Indicator */}
+                              <div className={`w-5 h-5 mr-3 flex items-center justify-center ${
+                                isRadio ? 'rounded-full' : 'rounded'
+                              } border-2 ${
+                                selected
+                                  ? 'border-gray-900 bg-gray-900'
+                                  : 'border-gray-300'
+                              }`}>
+                                {selected && (
+                                  <div className={`w-2.5 h-2.5 bg-white ${
+                                    isRadio ? 'rounded-full' : 'rounded-sm'
+                                  }`} />
+                                )}
+                              </div>
+                              
+                              <div className="flex-1">
+                                <span className="font-medium text-gray-900">{value.nameDe}</span>
+                                {value.nameEn && (
+                                  <span className="text-sm text-gray-600 ml-2">({value.nameEn})</span>
+                                )}
+                                {value.isDefault && (
+                                  <span className="ml-2 text-xs text-blue-600">(Standard)</span>
+                                )}
+                              </div>
                             </div>
                             
-                            <div className="flex-1">
-                              {/* Without section: strikethrough when selected */}
-                              {isWithoutGroup && selected ? (
-                                <span className="font-medium text-gray-500 line-through">{option.label}</span>
-                              ) : (
-                                <span className="font-medium text-gray-900">{option.label}</span>
-                              )}
-                              
-                              {/* Spice level: show chili icons */}
-                              {isSpiceGroup && option.spiceLevel && (
-                                <span className="ml-2">
-                                  {'🌶️'.repeat(option.spiceLevel)}
-                                </span>
-                              )}
-                              
-                              {option.infoText && (
-                                <button className="ml-2 text-gray-400 hover:text-gray-600">
-                                  <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Without section: show warning icon when selected */}
-                            {isWithoutGroup && selected && (
-                              <span className="ml-2 text-red-500">
-                                🚫
+                            {/* Price display */}
+                            {value.extraPrice > 0 && (
+                              <span className="text-sm font-medium text-gray-700 ml-4">
+                                +{value.extraPrice.toFixed(2)} €
                               </span>
                             )}
-                          </div>
-                          
-                          {/* Price display */}
-                          {option.priceAdd > 0 && (
-                            <span className="text-sm font-medium text-gray-700 ml-4">
-                              +{option.priceAdd.toFixed(2)} €
-                            </span>
-                          )}
-                          
-                          {/* Without section: show "free" */}
-                          {isWithoutGroup && option.priceAdd === 0 && selected && (
-                            <span className="text-sm text-gray-400 ml-4">
-                              free
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 

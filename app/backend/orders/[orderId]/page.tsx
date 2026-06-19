@@ -3,7 +3,7 @@ import { ArrowLeft, Clock, MapPin, Phone, Mail, Package, Check, X } from 'lucide
 import Link from 'next/link';
 import AcceptOrderForm from './AcceptOrderForm';
 import StatusUpdateForm from './StatusUpdateForm';
-import PrintOrderButton from '../components/PrintOrderButton';
+import PrintOrderButton from '../../components/PrintOrderButton';
 import { notFound } from 'next/navigation';
 import { formatSelectedOptions } from '@/lib/utils/options';
 

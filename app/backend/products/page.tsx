@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { getProducts, createProduct, updateProduct, deleteProduct, toggleProductAvailability } from '../_actions/products';
 import { getCategories } from '../_actions/categories';
 import { Search, Plus, Edit, Trash2, ToggleLeft, ToggleRight, X, ChevronDown } from 'lucide-react';
+import ProductOptionsModal from './ProductOptionsModal';
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -685,51 +686,13 @@ export default function ProductsPage() {
 
       {/* Product Options Modal */}
       {showOptionsModal && selectedProductForOptions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Optionen für {selectedProductForOptions.nameDe}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowOptionsModal(false);
-                    setSelectedProductForOptions(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Hinweis:</strong> Diese Funktion erfordert eine Datenbank-Migration. Führen Sie <code>npx prisma migrate dev --name add_product_options</code> aus, wenn die Datenbank verfügbar ist.
-                </p>
-              </div>
-
-              <div className="text-center py-8 text-gray-500">
-                <p className="mb-2">Optionen-Verwaltung wird nach der Migration aktiviert.</p>
-                <p className="text-sm">Die Optionen werden aus der Datenbank geladen und können hier verwaltet werden.</p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setShowOptionsModal(false);
-                  setSelectedProductForOptions(null);
-                }}
-                className="w-full px-6 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Schließen
-              </button>
-            </div>
-          </div>
-        </div>
+        <ProductOptionsModal
+          product={selectedProductForOptions}
+          onClose={() => {
+            setShowOptionsModal(false);
+            setSelectedProductForOptions(null);
+          }}
+        />
       )}
     </div>
   );

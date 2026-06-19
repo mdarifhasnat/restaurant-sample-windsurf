@@ -63,7 +63,7 @@ model Category {
 }
 
 model Product {
-  id              String         @id @default(cuid())
+  id              String              @id @default(cuid())
   categoryId      String
   name            String
   nameDe          String
@@ -71,19 +71,20 @@ model Product {
   description     String?
   descriptionDe   String?
   descriptionEn   String?
-  price           Decimal        @db.Decimal(10, 2)
-  sortOrder       Int            @default(0)
-  isActive        Boolean        @default(true)
-  isAvailable     Boolean        @default(true)
-  preparationTime Int?           @default(15)
+  price           Decimal             @db.Decimal(10, 2)
+  sortOrder       Int                 @default(0)
+  isActive        Boolean             @default(true)
+  isAvailable     Boolean             @default(true)
+  preparationTime Int?                @default(15)
   calories        Int?
   allergens       String[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
   orderItems      OrderItem[]
   images          ProductImage[]
   options         ProductOption[]
-  category        Category       @relation(fields: [categoryId], references: [id])
+  optionGroups    ProductOptionGroup[]
+  category        Category            @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@index([isActive])
@@ -123,6 +124,44 @@ model ProductOption {
   @@index([productId])
   @@index([isActive])
   @@map("product_options")
+}
+
+model ProductOptionGroup {
+  id           String   @id @default(cuid())
+  productId    String
+  nameDe       String
+  nameEn       String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  isRequired   Boolean  @default(false)
+  minSelection Int      @default(0)
+  maxSelection Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values       ProductOptionValue[]
+
+  @@index([productId])
+  @@index([isActive])
+  @@map("product_option_groups")
+}
+
+model ProductOptionValue {
+  id           String   @id @default(cuid())
+  optionGroupId String
+  nameDe       String
+  nameEn       String?
+  extraPrice   Decimal  @db.Decimal(10, 2) @default(0)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  optionGroup  ProductOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Cascade)
+
+  @@index([optionGroupId])
+  @@index([isActive])
+  @@map("product_option_values")
 }
 
 model Order {
@@ -178,6 +217,7 @@ model OrderItem {
   productPrice         Decimal  @db.Decimal(10, 2)
   quantity             Int
   specialInstructions  String?
+  selectedOptions      Json?
   createdAt            DateTime @default(now())
   order                Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product              Product  @relation(fields: [productId], references: [id])

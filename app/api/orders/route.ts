@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
         productPrice: new Decimal(product.price),
         quantity: item.quantity,
         specialInstructions: item.specialInstructions,
+        selectedOptions: item.selectedOptions ? JSON.stringify(item.selectedOptions) : null,
       };
     });
 
@@ -133,6 +134,7 @@ export async function POST(request: NextRequest) {
               productPrice: itemData.productPrice,
               quantity: itemData.quantity,
               specialInstructions: itemData.specialInstructions,
+              selectedOptions: itemData.selectedOptions,
             },
           })
         )
