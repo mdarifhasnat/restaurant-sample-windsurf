@@ -158,7 +158,7 @@ export default function CheckoutPage() {
         items: cartItems.map(item => ({
           productId: item.menuItemId,
           quantity: item.quantity,
-          selectedOptions: item.selectedOptions || undefined,
+          selectedOptions: item.optionSnapshot || undefined,
           specialInstructions: item.specialInstructions,
         })),
         paymentMethod: paymentMethod,

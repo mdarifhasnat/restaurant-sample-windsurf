@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ItemDetailModalProps, SelectedOptions, OptionGroup, OptionValue } from '@/types/menu-modal';
+import { getOptionGroups } from '@/app/backend/_actions/option-groups';
 
 export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: ItemDetailModalProps) {
   const [mounted, setMounted] = useState(false);
@@ -23,7 +24,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
       setQuantity(1);
       setSelectedOptions({});
       setShowAllergenInfo(false);
-      // Load option groups from API
+      // Load option groups from Server Action
       loadOptionGroups();
     }
   }, [isOpen, item.id]);
@@ -31,13 +32,12 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
   const loadOptionGroups = async () => {
     setLoadingOptions(true);
     try {
-      const response = await fetch(`/api/backend/products/option-groups?productId=${item.id}`);
-      const data = await response.json();
-      if (data.success) {
-        setOptionGroups(data.optionGroups);
+      const result = await getOptionGroups(item.id);
+      if (result.success) {
+        setOptionGroups(result.optionGroups);
         // Initialize default selections
         const defaults: SelectedOptions = {};
-        data.optionGroups.forEach((group: OptionGroup) => {
+        result.optionGroups.forEach((group: OptionGroup) => {
           const defaultValue = group.values.find(v => v.isDefault);
           if (defaultValue && group.isRequired) {
             defaults[group.id] = [defaultValue.id];
@@ -118,7 +118,29 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
 
   const handleAddToCart = () => {
     if (isFormValid) {
-      onAddToCart(item, quantity, selectedOptions, '');
+      // Create human-readable snapshot of selected options
+      const optionSnapshot: any = {};
+      Object.entries(selectedOptions).forEach(([groupId, valueIds]) => {
+        const group = optionGroups.find(g => g.id === groupId);
+        if (group) {
+          optionSnapshot[groupId] = {
+            groupNameDe: group.nameDe,
+            groupNameEn: group.nameEn,
+            groupId: groupId,
+            values: valueIds.map(valueId => {
+              const value = group.values.find(v => v.id === valueId);
+              return {
+                valueId: valueId,
+                valueNameDe: value?.nameDe || '',
+                valueNameEn: value?.nameEn || '',
+                extraPrice: value?.extraPrice || 0,
+              };
+            }),
+          };
+        }
+      });
+
+      onAddToCart(item, quantity, selectedOptions, '', optionSnapshot);
       onClose();
     }
   };
@@ -197,7 +219,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
                 Keine Optionen verfügbar
               </div>
             ) : (
-              optionGroups.map(group => {
+              optionGroups.filter(g => g.isActive).map(group => {
                 const isSelected = (valueId: string) => (selectedOptions[group.id] || []).includes(valueId);
                 const isRadio = group.maxSelection === 1;
 
@@ -306,21 +328,28 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
           </div>
 
           {/* Add Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!isFormValid}
-            className={`flex-1 py-4 px-6 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-colors ${
-              isFormValid
-                ? 'bg-gray-900 hover:bg-gray-800'
-                : 'bg-gray-300 cursor-not-allowed'
-            }`}
-          >
-            <span>Add</span>
-            <span>{totalPrice.toFixed(2)} €</span>
-            <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-              <path d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="flex-1">
+            {!isFormValid && (
+              <p className="text-xs text-red-600 mb-2 text-center">
+                Bitte wählen Sie eine Option aus.
+              </p>
+            )}
+            <button
+              onClick={handleAddToCart}
+              disabled={!isFormValid}
+              className={`w-full py-4 px-6 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-colors ${
+                isFormValid
+                  ? 'bg-gray-900 hover:bg-gray-800'
+                  : 'bg-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <span>Add</span>
+              <span>{totalPrice.toFixed(2)} €</span>
+              <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>,

@@ -147,6 +147,7 @@ export interface CartItem {
   quantity: number;
   image?: string;
   selectedOptions?: string; // JSON string of selected options
+  optionSnapshot?: any; // Human-readable snapshot of selected options
 }
 
 // ============================================================================

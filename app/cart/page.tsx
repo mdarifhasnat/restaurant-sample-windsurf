@@ -27,18 +27,34 @@ export default function CartPage() {
               {items.map((item) => (
                 <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                      {item.optionSnapshot && Object.keys(item.optionSnapshot).length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {Object.values(item.optionSnapshot).map((group: any) => (
+                            <div key={group.groupId} className="text-sm text-gray-600">
+                              <span className="font-medium">{group.groupNameDe}:</span>{' '}
+                              {group.values.map((v: any, idx: number) => (
+                                <span key={v.valueId}>
+                                  {v.valueNameDe}
+                                  {v.extraPrice > 0 && ` (+${v.extraPrice.toFixed(2)}€)`}
+                                  {idx < group.values.length - 1 && ', '}
+                                </span>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       {item.specialInstructions && (
                         <p className="text-sm text-gray-500 mt-1">{item.specialInstructions}</p>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right ml-4">
                       <p className="font-bold text-gray-900">{(item.price * item.quantity).toFixed(2)}€</p>
                       <p className="text-sm text-gray-500">{item.price.toFixed(2)}€ pro Stück</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex items-center border border-gray-200 rounded-lg">
                       <button

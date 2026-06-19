@@ -56,9 +56,24 @@ export default function OrderSummary({ orderSummary }: OrderSummaryProps) {
             )}
             <div className="flex-1">
               <h3 className="font-medium text-gray-900">{item.name}</h3>
-              {item.selectedOptions && formatSelectedOptions(item.selectedOptions) && (
+              {item.optionSnapshot && Object.keys(item.optionSnapshot).length > 0 ? (
+                <div className="mt-1 space-y-1">
+                  {Object.values(item.optionSnapshot).map((group: any) => (
+                    <div key={group.groupId} className="text-sm text-gray-500">
+                      <span className="font-medium">{group.groupNameDe}:</span>{' '}
+                      {group.values.map((v: any, idx: number) => (
+                        <span key={v.valueId}>
+                          {v.valueNameDe}
+                          {v.extraPrice > 0 && ` (+${v.extraPrice.toFixed(2)}€)`}
+                          {idx < group.values.length - 1 && ', '}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : item.selectedOptions && formatSelectedOptions(item.selectedOptions) ? (
                 <p className="text-sm text-gray-500 mt-1">{formatSelectedOptions(item.selectedOptions)}</p>
-              )}
+              ) : null}
               {item.description && (
                 <p className="text-sm text-gray-500 mt-1">{item.description}</p>
               )}

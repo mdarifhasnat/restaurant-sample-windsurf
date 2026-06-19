@@ -342,15 +342,26 @@ export default function RestaurantPage() {
     };
   };
 
-  const handleModalAddToCart = (itemDetail: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions, comments: string) => {
+  const handleModalAddToCart = (itemDetail: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions, comments: string, optionSnapshot?: any) => {
+    // Calculate total price including option extra prices
+    let totalPrice = itemDetail.basePrice;
+    if (optionSnapshot) {
+      Object.values(optionSnapshot).forEach((group: any) => {
+        group.values.forEach((value: any) => {
+          totalPrice += value.extraPrice || 0;
+        });
+      });
+    }
+
     for (let i = 0; i < quantity; i++) {
       addItem({
         menuItemId: itemDetail.id,
         name: itemDetail.name,
         nameEn: itemDetail.name, // Using German name for both for now
-        price: itemDetail.basePrice,
+        price: totalPrice,
         specialInstructions: comments, // Store user comments
         selectedOptions: JSON.stringify(selectedOptions), // Store selected options as JSON
+        optionSnapshot: optionSnapshot, // Store human-readable snapshot
       });
     }
     handleModalClose();

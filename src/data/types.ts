@@ -56,4 +56,5 @@ export interface CartItem {
   specialInstructions?: string;
   comments?: string;
   selectedOptions?: string; // JSON string of selected options
+  optionSnapshot?: any; // Human-readable snapshot of selected options
 }

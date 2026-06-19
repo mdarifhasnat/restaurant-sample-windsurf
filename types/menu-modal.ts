@@ -43,5 +43,5 @@ export interface ItemDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   item: MenuItemDetail;
-  onAddToCart: (item: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions, comments: string) => void;
+  onAddToCart: (item: MenuItemDetail, quantity: number, selectedOptions: SelectedOptions, comments: string, optionSnapshot?: any) => void;
 }
