@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import Navbar from '@/components/Navbar';
-import { formatSelectedOptions } from '@/lib/utils/options';
+import { formatSelectedOptions, formatOptionSnapshot } from '@/lib/utils/options';
 
 interface PageProps {
   params: Promise<{
@@ -143,10 +143,12 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{item.productNameDe || item.productName}</p>
                     <p className="text-sm text-gray-600">Menge: {item.quantity}</p>
-                    {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
-                      <p className="text-xs text-gray-500 italic mt-1">📝 {formatSelectedOptions(item.specialInstructions)}</p>
+                    {item.selectedOptions && (
+                      <div className="text-xs text-gray-500 italic mt-1 whitespace-pre-line">
+                        {formatOptionSnapshot(item.selectedOptions)}
+                      </div>
                     )}
-                    {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
+                    {item.specialInstructions && (
                       <p className="text-xs text-gray-500 italic mt-1">📝 {item.specialInstructions}</p>
                     )}
                   </div>

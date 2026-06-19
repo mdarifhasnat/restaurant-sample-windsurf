@@ -5,7 +5,7 @@ import AcceptOrderForm from './AcceptOrderForm';
 import StatusUpdateForm from './StatusUpdateForm';
 import PrintOrderButton from '../../components/PrintOrderButton';
 import { notFound } from 'next/navigation';
-import { formatSelectedOptions } from '@/lib/utils/options';
+import { formatSelectedOptions, formatOptionSnapshot } from '@/lib/utils/options';
 
 export default async function OrderDetailPage({
   params,
@@ -194,13 +194,15 @@ export default async function OrderDetailPage({
                       <Package className="w-5 h-5 text-gray-400 mr-3 mt-1" />
                       <div>
                         <p className="font-medium text-gray-900">{item.productName}</p>
-                        {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
-                          <p className="text-sm text-gray-500 mt-1">{formatSelectedOptions(item.specialInstructions)}</p>
+                        {item.selectedOptions && (
+                          <div className="text-sm text-gray-500 mt-1 whitespace-pre-line">
+                            {formatOptionSnapshot(item.selectedOptions)}
+                          </div>
                         )}
                         {item.productDescription && (
                           <p className="text-sm text-gray-500 mt-1">{item.productDescription}</p>
                         )}
-                        {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
+                        {item.specialInstructions && (
                           <p className="text-sm text-gray-500 mt-1">
                             Sonderwünsche: {item.specialInstructions}
                           </p>
@@ -289,10 +291,12 @@ export default async function OrderDetailPage({
                 <div key={item.id} className="flex justify-between mb-2">
                   <div>
                     <span className="font-bold">{item.quantity}x</span> {item.productName}
-                    {item.specialInstructions && formatSelectedOptions(item.specialInstructions) && (
-                      <div className="text-gray-600 text-xs mt-1">{formatSelectedOptions(item.specialInstructions)}</div>
+                    {item.selectedOptions && (
+                      <div className="text-gray-600 text-xs mt-1 whitespace-pre-line">
+                        {formatOptionSnapshot(item.selectedOptions)}
+                      </div>
                     )}
-                    {item.specialInstructions && !formatSelectedOptions(item.specialInstructions) && (
+                    {item.specialInstructions && (
                       <div className="text-gray-600 text-xs mt-1">Sonderwünsche: {item.specialInstructions}</div>
                     )}
                   </div>

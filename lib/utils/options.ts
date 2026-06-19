@@ -50,6 +50,48 @@ export function formatSelectedOptions(optionsJson: string | null | undefined): s
 }
 
 /**
+ * Format option snapshot (human-readable format) to display string
+ * @param optionSnapshot - Object containing option groups and values snapshot
+ * @returns Formatted string with options or empty string if parsing fails
+ */
+export function formatOptionSnapshot(optionSnapshot: any): string {
+  if (!optionSnapshot || typeof optionSnapshot !== 'object') {
+    return '';
+  }
+
+  try {
+    const formattedOptions: string[] = [];
+    
+    for (const group of Object.values(optionSnapshot)) {
+      if (!group || typeof group !== 'object') continue;
+      
+      const groupObj = group as any;
+      const groupName = groupObj.groupNameDe || groupObj.groupName || '';
+      const values = groupObj.values || [];
+      
+      if (!groupName || !Array.isArray(values) || values.length === 0) continue;
+      
+      const valueNames = values
+        .map((v: any) => {
+          const name = v.valueNameDe || v.valueName || '';
+          const extraPrice = v.extraPrice || 0;
+          return extraPrice > 0 ? `${name} (+${extraPrice.toFixed(2)}€)` : name;
+        })
+        .join(', ');
+      
+      if (valueNames) {
+        formattedOptions.push(`${groupName}: ${valueNames}`);
+      }
+    }
+
+    return formattedOptions.join('\n');
+  } catch (error) {
+    console.error('Failed to format option snapshot:', error);
+    return '';
+  }
+}
+
+/**
  * Parse product options from JSON string to object
  * @param optionsJson - JSON string containing options
  * @returns Parsed object or null if parsing fails
