@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Bestellungen', href: '/backend/orders', icon: ShoppingCart },
   { name: 'Produkte', href: '/backend/products', icon: Package },
   { name: 'Kategorien', href: '/backend/categories', icon: FolderTree },
+  { name: 'Optionsvorlagen', href: '/backend/option-templates', icon: Settings },
   { name: 'Berichte', href: '/backend/reports', icon: FileText },
   { name: 'Einstellungen', href: '/backend/settings', icon: Settings },
 ];

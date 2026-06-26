@@ -43,6 +43,123 @@ export async function getOptionGroups(productId: string) {
 }
 
 // ============================================================================
+// GET ALL OPTION GROUPS FOR PRODUCT (with template inheritance)
+// ============================================================================
+
+export async function getAllOptionGroupsForProduct(productId: string) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: {
+          include: {
+            optionGroupAssignments: {
+              include: {
+                template: {
+                  include: {
+                    values: {
+                      where: { isActive: true },
+                      orderBy: { sortOrder: 'asc' },
+                    },
+                  },
+                },
+              },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+        optionGroupAssignments: {
+          include: {
+            template: {
+              include: {
+                values: {
+                  where: { isActive: true },
+                  orderBy: { sortOrder: 'asc' },
+                },
+              },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+        optionGroups: {
+          where: { isActive: true },
+          include: {
+            values: {
+              where: { isActive: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!product) {
+      return { success: false, error: 'Produkt nicht gefunden' };
+    }
+
+    // Combine category inherited groups, product-specific assignments, and legacy groups
+    const allGroups: any[] = [];
+
+    // Add category inherited groups (if not disabled)
+    product.category?.optionGroupAssignments?.forEach((assignment: any) => {
+      const productAssignment = product.optionGroupAssignments?.find(
+        (pa: any) => pa.templateId === assignment.templateId
+      );
+      
+      // Only include if not disabled by product override
+      if (!productAssignment || !productAssignment.isDisabled) {
+        allGroups.push({
+          ...assignment.template,
+          source: 'category',
+          isDisabled: productAssignment?.isDisabled || false,
+        });
+      }
+    });
+
+    // Add product-specific template assignments
+    product.optionGroupAssignments?.forEach((assignment: any) => {
+      // Only add if not already added from category (to avoid duplicates)
+      if (!allGroups.find((g: any) => g.id === assignment.templateId)) {
+        allGroups.push({
+          ...assignment.template,
+          source: 'product',
+          isDisabled: assignment.isDisabled,
+        });
+      }
+    });
+
+    // Add legacy product-specific groups
+    product.optionGroups?.forEach((group: any) => {
+      allGroups.push({
+        ...group,
+        source: 'legacy',
+      });
+    });
+
+    // Sort by sortOrder
+    allGroups.sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+
+    // Convert Decimal to Number for serialization
+    const serializedGroups = allGroups.map((group: any) => ({
+      ...group,
+      values: group.values?.map((value: any) => ({
+        ...value,
+        extraPrice: Number(value.extraPrice),
+      })) || [],
+    }));
+
+    return { success: true, optionGroups: serializedGroups };
+  } catch (error) {
+    console.error("Error fetching all option groups for product:", error);
+    return {
+      success: false,
+      error: "Fehler beim Laden der Optionsgruppen",
+    };
+  }
+}
+
+// ============================================================================
 // CREATE OPTION GROUP
 // ============================================================================
 

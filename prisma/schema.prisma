@@ -57,6 +57,7 @@ model Category {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   products      Product[]
+  optionGroupAssignments CategoryOptionGroupAssignment[]
 
   @@index([sortOrder])
   @@map("categories")
@@ -84,6 +85,7 @@ model Product {
   images          ProductImage[]
   options         ProductOption[]
   optionGroups    ProductOptionGroup[]
+  optionGroupAssignments ProductOptionGroupAssignment[]
   category        Category            @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
@@ -162,6 +164,84 @@ model ProductOptionValue {
   @@index([optionGroupId])
   @@index([isActive])
   @@map("product_option_values")
+}
+
+// ============================================================================
+// Reusable Option Group Templates
+// ============================================================================
+
+model OptionGroupTemplate {
+  id           String   @id @default(cuid())
+  nameDe       String
+  nameEn       String?
+  isRequired   Boolean  @default(false)
+  minSelection Int      @default(0)
+  maxSelection Int      @default(1)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  values       OptionGroupTemplateValue[]
+  productAssignments ProductOptionGroupAssignment[]
+  categoryAssignments CategoryOptionGroupAssignment[]
+
+  @@index([isActive])
+  @@map("option_group_templates")
+}
+
+model OptionGroupTemplateValue {
+  id           String   @id @default(cuid())
+  templateId   String
+  nameDe       String
+  nameEn       String?
+  extraPrice   Decimal  @db.Decimal(10, 2) @default(0)
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  template     OptionGroupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@index([isActive])
+  @@map("option_group_template_values")
+}
+
+model ProductOptionGroupAssignment {
+  id           String   @id @default(cuid())
+  productId    String
+  templateId   String
+  sortOrder    Int      @default(0)
+  isDisabled   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  template     OptionGroupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, templateId])
+  @@index([productId])
+  @@index([templateId])
+  @@map("product_option_group_assignments")
+}
+
+model CategoryOptionGroupAssignment {
+  id           String   @id @default(cuid())
+  categoryId   String
+  templateId   String
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  template     OptionGroupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, templateId])
+  @@index([categoryId])
+  @@index([templateId])
+  @@map("category_option_group_assignments")
 }
 
 model Order {

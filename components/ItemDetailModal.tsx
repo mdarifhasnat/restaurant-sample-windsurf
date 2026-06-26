@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ItemDetailModalProps, SelectedOptions, OptionGroup, OptionValue } from '@/types/menu-modal';
-import { getOptionGroups } from '@/app/backend/_actions/option-groups';
+import { getAllOptionGroupsForProduct } from '@/app/backend/_actions/option-groups';
 
 export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: ItemDetailModalProps) {
   const [mounted, setMounted] = useState(false);
@@ -32,12 +32,15 @@ export default function ItemDetailModal({ isOpen, onClose, item, onAddToCart }: 
   const loadOptionGroups = async () => {
     setLoadingOptions(true);
     try {
-      const result = await getOptionGroups(item.id);
+      const result = await getAllOptionGroupsForProduct(item.id);
       if (result.success) {
         setOptionGroups(result.optionGroups);
         // Initialize default selections
         const defaults: SelectedOptions = {};
         result.optionGroups.forEach((group: OptionGroup) => {
+          // Skip disabled groups
+          if (group.isDisabled) return;
+          
           const defaultValue = group.values.find(v => v.isDefault);
           if (defaultValue && group.isRequired) {
             defaults[group.id] = [defaultValue.id];
